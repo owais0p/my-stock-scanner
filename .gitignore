@@ -1,0 +1,7 @@
+GEMINI.md
+.next
+node_modules
+*.csv
+*.json
+__pycache__
+.env
