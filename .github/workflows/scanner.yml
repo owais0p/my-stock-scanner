@@ -1,0 +1,32 @@
+name: Morning Stock Scan
+on:
+  schedule:
+    - cron: '30 3 * * 1-5' # 9:00 AM IST (Monday to Friday)
+  workflow_dispatch: # Allows manual trigger from GitHub UI or API
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          
+      - name: Install Dependencies
+        run: |
+          pip install yfinance pandas numpy requests tqdm
+          
+      - name: Run Scanner
+        run: python momentum_scanner.py
+        
+      - name: Commit and Push Results
+        run: |
+          git config --global user.name "Scanner Bot"
+          git config --global user.email "bot@scanner.com"
+          git add momentum_results.csv ema_results.csv
+          git commit -m "Automated Scan: $(date)" || echo "No changes to commit"
+          git push

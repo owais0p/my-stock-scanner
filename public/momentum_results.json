@@ -1,0 +1,37 @@
+{
+    "last_updated": "2026-06-02 16:45:00",
+    "stocks": [
+        {
+            "Ticker": "RELIANCE",
+            "Price": 2985.4,
+            "Market Cap (Cr)": 2015482.5,
+            "Pole Gain %": 24.5,
+            "Consol Range %": 4.2,
+            "Consol Length": 12
+        },
+        {
+            "Ticker": "TATASTEEL",
+            "Price": 164.2,
+            "Market Cap (Cr)": 204512.0,
+            "Pole Gain %": 32.1,
+            "Consol Range %": 2.8,
+            "Consol Length": 8
+        },
+        {
+            "Ticker": "HDFCBANK",
+            "Price": 1542.8,
+            "Market Cap (Cr)": 1172548.2,
+            "Pole Gain %": 18.4,
+            "Consol Range %": 5.1,
+            "Consol Length": 15
+        },
+        {
+            "Ticker": "INFY",
+            "Price": 1420.5,
+            "Market Cap (Cr)": 589412.0,
+            "Pole Gain %": 21.2,
+            "Consol Range %": 3.9,
+            "Consol Length": 10
+        }
+    ]
+}
