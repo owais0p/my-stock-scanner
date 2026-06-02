@@ -309,60 +309,28 @@
         });
     </script>
     <script>
-    // Global interceptor to fix the chart modal dynamic loading bug on Hugging Face
+    // Ultimate unblockable native link handler for Hugging Face cloud environments
     document.addEventListener('click', function(event) {
-        // 1. Find the nearest clicked card or element that contains our ticker string
+        // 1. Find the nearest clicked stock signal card component
         const card = event.target.closest('[id*="card-"]') || event.target.closest('.stock-card') || event.target.closest('[onclick]') || event.target.closest('.card-anim');
         
         if (card) {
-            // Try to capture the ticker symbol dynamically from the text context
+            // 2. Extract the ticker text string dynamically from the card contents
             let tickerText = card.querySelector('h3, .ticker, bold, span')?.innerText || card.innerText;
             let match = tickerText.match(/[A-Z]+/);
             
             if (match) {
                 let ticker = match[0].trim();
                 
-                // Stop any other old modal handlers from running their broken code
+                // Stop any broken local overlay script modals from interrupting the action
                 event.stopImmediatePropagation();
+                event.preventDefault();
                 
-                // Open your modal window manually via your existing class handles
-                const modal = document.getElementById("chart-modal");
-                if (modal) {
-                    modal.classList.add('active'); // Using the established .active class from your styles
-                }
-                
-                const titleDisplay = document.getElementById("modal-ticker-title");
-                if (titleDisplay) {
-                    titleDisplay.innerHTML = `<span class="text-slate-100">VIEWING MATRIX:</span> <span class="text-emerald-400">${ticker}</span>`;
-                }
-                
-                // 2. Wipe the broken iframe template container clean
-                const container = document.getElementById("tradingview-widget-container");
-                if (container) {
-                    container.innerHTML = '<div class="tradingview-widget-container__widget" style="width:100%; height:100%;"></div>';
-                    
-                    // 3. Inject the completely unrestricted open Symbol Overview script widget
-                    const scriptWidget = document.createElement('script');
-                    scriptWidget.type = 'text/javascript';
-                    scriptWidget.src = 'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js';
-                    scriptWidget.async = true;
-                    scriptWidget.innerHTML = JSON.stringify({
-                        "symbols": [["NSE:" + ticker + "|1D"]],
-                        "chartOnly": true,
-                        "width": "100%",
-                        "height": "100%",
-                        "locale": "en",
-                        "colorTheme": "dark",
-                        "autosize": true,
-                        "showVolume": true,
-                        "background": "#060810",
-                        "chartType": "candles"
-                    });
-                    container.appendChild(scriptWidget);
-                }
+                // 3. Launch a clean, lightning-fast native browser tab directly to the live daily candlestick chart
+                window.open(`https://www.tradingview.com/chart/?symbol=NSE:${ticker}`, '_blank');
             }
         }
-    }, true); // Setting useCapture to true overrides any other local script event rules
+    }, true); // High priority execution flag overrides all local script limits
     </script>
 </body>
 </html>
