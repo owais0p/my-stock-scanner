@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+    <!-- TradingView Core Script -->
+    <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -32,7 +34,8 @@
         body { background-color: #060810; -webkit-tap-highlight-color: transparent; }
         .terminal-border { border: 1px solid #1E293B; }
         .glass { background: rgba(13, 17, 28, 0.8); backdrop-filter: blur(8px); }
-        .card-anim { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card-anim { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+        .card-anim:hover { border-color: rgba(52, 211, 153, 0.4); background-color: rgba(13, 17, 28, 1); }
         .card-anim:active { scale: 0.98; opacity: 0.9; }
         @keyframes pulse-emerald {
             0%, 100% { opacity: 1; transform: scale(1); }
@@ -45,6 +48,9 @@
             to { text-shadow: 0 0 16px rgba(52, 211, 153, 0.6); }
         }
         .brand-glow { animation: neon-breathe 4s ease-in-out infinite alternate; }
+        
+        /* Modal Transition */
+        #chart-modal.active { opacity: 1; pointer-events: auto; }
     </style>
 </head>
 <body class="text-slate-300 font-mono selection:bg-accent/30 selection:text-accent">
@@ -138,6 +144,22 @@
         </div>
     </div>
 
+    <!-- Chart Modal Structure -->
+    <div id="chart-modal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="max-w-4xl w-[94%] h-[80vh] bg-[#060810] border border-slate-800 rounded-xl p-4 relative flex flex-col shadow-2xl">
+            <div id="modal-close" class="text-slate-500 hover:text-slate-200 font-mono text-lg absolute top-4 right-5 cursor-pointer z-10">×</div>
+            <div class="flex items-center gap-3">
+                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Viewing Matrix:</span>
+                <h3 id="modal-ticker-title" class="text-lg font-black uppercase tracking-tighter">
+                    <!-- Dynamic Ticker Title -->
+                </h3>
+            </div>
+            <div id="tradingview-widget-container" class="w-full flex-grow mt-4 rounded-lg overflow-hidden border border-slate-900 bg-black">
+                <!-- Widget instantiation here -->
+            </div>
+        </div>
+    </div>
+
     <script>
         const scanBtn = document.getElementById('scan-btn');
         const exportBtn = document.getElementById('export-btn');
@@ -149,6 +171,12 @@
         const resultsMeta = document.getElementById('results-meta');
         const signalCountSpan = document.getElementById('signal-count');
         const resultCountBadge = document.getElementById('result-count-badge');
+        
+        // Modal elements
+        const chartModal = document.getElementById('chart-modal');
+        const modalClose = document.getElementById('modal-close');
+        const modalTickerTitle = document.getElementById('modal-ticker-title');
+        const widgetContainer = document.getElementById('tradingview-widget-container');
 
         let lastScanData = [];
 
@@ -226,12 +254,51 @@
                         </div>
                         <span class="text-accent flex items-center gap-1.5">
                             <span class="w-1 h-1 bg-accent rounded-full animate-pulse"></span>
-                            Bullish Pulse
+                            View Chart
                         </span>
                     </div>
                 `;
+                
+                // Open Chart on Click
+                card.addEventListener('click', () => openChart(stock.ticker));
+                
                 signalsContainer.appendChild(card);
             });
+        }
+
+        function openChart(ticker) {
+            // Update Title
+            modalTickerTitle.innerHTML = `<span class="text-slate-100">NSE:</span><span class="text-emerald-400">${ticker}</span>`;
+            
+            // Show Modal
+            chartModal.classList.add('active');
+            
+            // Clear previous widget
+            widgetContainer.innerHTML = '';
+            
+            // Initialize New TradingView Widget
+            new TradingView.widget({
+                "autosize": true,
+                "symbol": "NSE:" + ticker,
+                "interval": "D",
+                "timezone": "Asia/Kolkata",
+                "theme": "dark",
+                "style": "1",
+                "locale": "en",
+                "toolbar_bg": "#060810",
+                "enable_publishing": false,
+                "hide_side_toolbar": true,
+                "allow_symbol_change": false,
+                "container_id": "tradingview-widget-container"
+            });
+        }
+
+        function closeChart() {
+            chartModal.classList.remove('active');
+            // Flush widget to stop background threads
+            setTimeout(() => {
+                widgetContainer.innerHTML = '';
+            }, 200);
         }
 
         function exportToCSV() {
@@ -265,6 +332,10 @@
 
         scanBtn.addEventListener('click', triggerScan);
         exportBtn.addEventListener('click', exportToCSV);
+        modalClose.addEventListener('click', closeChart);
+        chartModal.addEventListener('click', (e) => {
+            if (e.target === chartModal) closeChart();
+        });
     </script>
 </body>
 </html>
