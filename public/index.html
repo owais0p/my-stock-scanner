@@ -73,6 +73,15 @@
             </div>
         </div>
 
+        <!-- Results Controls -->
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Live Signals</h2>
+            <button id="export-btn" class="hidden border border-slate-700 bg-slate-900/50 hover:bg-slate-800 text-slate-300 font-mono text-[11px] tracking-wider uppercase rounded-lg px-3 py-1.5 transition duration-200 flex items-center gap-2 group">
+                <svg class="w-3 h-3 group-hover:-translate-y-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Export CSV
+            </button>
+        </div>
+
         <!-- Signals List -->
         <div id="signals-container" class="space-y-4">
             <!-- Empty State -->
@@ -105,14 +114,18 @@
 
     <script>
         const scanBtn = document.getElementById('scan-btn');
+        const exportBtn = document.getElementById('export-btn');
         const btnText = document.getElementById('btn-text');
         const loadingSpinner = document.getElementById('loading-spinner');
         const signalsContainer = document.getElementById('signals-container');
         const scanStatus = document.getElementById('scan-status');
         const emptyState = document.getElementById('empty-state');
 
+        let lastScanData = [];
+
         async function triggerScan() {
             scanBtn.disabled = true;
+            exportBtn.classList.add('hidden');
             btnText.textContent = 'Analyzing 500 Stocks...';
             loadingSpinner.classList.remove('hidden');
             scanStatus.textContent = 'Active';
@@ -124,8 +137,12 @@
                 const result = await response.json();
 
                 if (result.status === 'success') {
+                    lastScanData = result.data;
                     renderSignals(result.data);
                     scanStatus.textContent = 'Complete';
+                    if (result.data.length > 0) {
+                        exportBtn.classList.remove('hidden');
+                    }
                 } else {
                     throw new Error('Scan failed');
                 }
@@ -194,7 +211,37 @@
             });
         }
 
+        function exportToCSV() {
+            if (lastScanData.length === 0) return;
+
+            const headers = ['Ticker', 'Price (INR)', '9 EMA', '20 EMA', 'Momentum Condition', 'Tightness Score'];
+            const rows = lastScanData.map(stock => [
+                stock.ticker,
+                stock.price,
+                stock.ema9,
+                stock.ema20,
+                stock.setup,
+                stock.score
+            ]);
+
+            let csvContent = "data:text/csv;charset=utf-8," 
+                + headers.join(",") + "\n"
+                + rows.map(e => e.join(",")).join("\n");
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            
+            const date = new Date().toISOString().split('T')[0];
+            link.setAttribute("download", `Momentum_Scan_${date}.csv`);
+            document.body.appendChild(link);
+
+            link.click();
+            document.body.removeChild(link);
+        }
+
         scanBtn.addEventListener('click', triggerScan);
+        exportBtn.addEventListener('click', exportToCSV);
     </script>
 </body>
 </html>
