@@ -273,18 +273,14 @@
             // Show Modal
             chartModal.classList.add('active');
             
-            // Switch to Iframe Embed to bypass domain constraints
-            widgetContainer.innerHTML = `
-                <iframe 
-                    src="https://s.tradingview.com/widgetembed/?frameElementId=tradingview-widget-container&symbol=NSE%3A${ticker}&interval=D&hidesidetoolbar=1&symboledit=0&saveimage=0&toolbarbg=060810&theme=dark&timezone=Asia%2FKolkata"
-                    width="100%" 
-                    height="100%" 
-                    frameborder="0" 
-                    allowtransparency="true" 
-                    scrolling="no" 
-                    allowfullscreen>
-                </iframe>
-            `;
+            // Permanent fix for symbol restrictions and defaulting to AAPL
+            widgetContainer.innerHTML = '';
+            const iframe = document.createElement('iframe');
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.border = 'none';
+            iframe.src = `https://s.tradingview.com/widgetembed/?symbol=NSE:${ticker}&interval=D&theme=dark&style=1&timezone=Asia/Kolkata&studies=[]`;
+            widgetContainer.appendChild(iframe);
         }
 
         function closeChart() {
