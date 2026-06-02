@@ -39,6 +39,12 @@
             50% { opacity: 0.6; transform: scale(1.1); }
         }
         .pulse-emerald { animation: pulse-emerald 2s infinite; }
+
+        @keyframes neon-breathe {
+            from { text-shadow: 0 0 4px rgba(52, 211, 153, 0.2); }
+            to { text-shadow: 0 0 16px rgba(52, 211, 153, 0.6); }
+        }
+        .brand-glow { animation: neon-breathe 4s ease-in-out infinite alternate; }
     </style>
 </head>
 <body class="text-slate-300 font-mono selection:bg-accent/30 selection:text-accent">
@@ -63,8 +69,8 @@
         
         <!-- Hero Section -->
         <div class="mb-8 md:mb-12">
-            <h1 class="text-3xl md:text-5xl font-black tracking-tight leading-none mb-2 uppercase italic">
-                <span class="text-slate-100 font-bold font-mono tracking-wider">AAPNA</span><span class="text-emerald-400 font-bold font-mono tracking-wider">TRADER</span>
+            <h1 class="text-4xl md:text-6xl font-black italic tracking-widest leading-none mb-2 uppercase">
+                <span class="text-slate-100">AAPNA</span><span class="text-emerald-400 brand-glow">TRADER</span>
             </h1>
             <p class="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Momentum Logic Deck</p>
         </div>
