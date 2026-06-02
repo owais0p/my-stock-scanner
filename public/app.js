@@ -30,7 +30,7 @@ async function triggerScan() {
     } finally {
         // UI State: Idle
         scanBtn.disabled = false;
-        btnText.textContent = 'Re-Initialize Scan';
+        btnText.textContent = 'Re-Execute System Scan';
         loadingSpinner.classList.add('hidden');
         scanStatus.classList.remove('animate-pulse');
     }
