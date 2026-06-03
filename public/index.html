@@ -7,7 +7,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Inter:wght@400;600;900&family=Iceland&display=swap" rel="stylesheet">
     <!-- TradingView Core Script -->
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
     <!-- Tailwind CSS -->
@@ -17,26 +17,233 @@
             theme: {
                 extend: {
                     colors: {
-                        background: '#060810',
-                        surface: '#0D111C',
-                        accent: '#34D399', // emerald-400
-                        border: '#1E293B',
+                        background: 'var(--bg-color)',
+                        surface: 'var(--surface-color)',
+                        accent: 'var(--accent-color)',
+                        border: 'var(--border-color)',
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
                         mono: ['JetBrains Mono', 'monospace'],
+                        iceland: ['Iceland', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
     <style>
-        body { background-color: #060810; -webkit-tap-highlight-color: transparent; }
-        .terminal-border { border: 1px solid #1E293B; }
-        .glass { background: rgba(13, 17, 28, 0.8); backdrop-filter: blur(8px); }
-        .card-anim { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
-        .card-anim:hover { border-color: rgba(52, 211, 153, 0.4); background-color: rgba(13, 17, 28, 1); }
-        .card-anim:active { scale: 0.98; opacity: 0.9; }
+        :root {
+            --bg-color: #030712;
+            --surface-color: #111827;
+            --accent-color: #34D399;
+            --border-color: #1E293B;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --glass-bg: #111827;
+            --pod-bg: #111827;
+            --bg-texture: linear-gradient(rgba(16, 185, 129, 0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(16, 185, 129, 0.12) 1px, transparent 1px);
+            --bg-size: 16px 16px;
+        }
+
+        body.light-theme {
+            --bg-color: #f8fafc;
+            --surface-color: #ffffff;
+            --accent-color: #059669;
+            --border-color: #cbd5e1;
+            --text-primary: #0f172a;
+            --text-secondary: #0f172a; 
+            --glass-bg: #ffffff;
+            --pod-bg: #ffffff;
+            --bg-texture: radial-gradient(rgba(15, 23, 42, 0.18) 1px, transparent 1px);
+            --bg-size: 12px 12px;
+        }
+
+        body { 
+            background-color: var(--bg-color); 
+            color: var(--text-secondary);
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+            -webkit-tap-highlight-color: transparent; 
+            position: relative;
+            min-height: 100vh;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: var(--bg-texture);
+            background-size: var(--bg-size);
+            z-index: 0;
+            pointer-events: none;
+            transition: background-image 0.3s ease;
+        }
+
+        /* --- Content Isolation Layer --- */
+        body > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* --- Light Theme Force Overrides --- */
+        body.light-theme .text-slate-100,
+        body.light-theme .text-slate-300,
+        body.light-theme .text-slate-500,
+        body.light-theme .text-white,
+        body.light-theme .brand-text span:first-child { color: #0f172a !important; }
+        
+        body.light-theme .card-anim h3,
+        body.light-theme .card-anim span:not(.text-accent) { color: #0f172a !important; }
+
+        body.light-theme .tactical-card { 
+            background: #ffffff !important; 
+            border: 1px solid rgba(16, 185, 129, 0.2) !important; 
+            backdrop-filter: blur(16px) !important; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+        }
+
+        body.light-theme .card-anim {
+            background-color: #ffffff !important;
+            border: 1px solid #e2e8f0;
+            border-left: 4px solid #059669 !important;
+        }
+
+        body.light-theme .score-badge {
+            background: rgba(5, 150, 105, 0.1) !important;
+            border: 1px solid rgba(5, 150, 105, 0.3) !important;
+            color: #059669 !important;
+        }
+
+        body.light-theme select {
+            color: #1e293b !important;
+            border-color: #94a3b8 !important; 
+            background-color: #ffffff !important;
+        }
+        
+        body.light-theme select option { color: #1e293b !important; }
+        
+        body.light-theme #matrix-engine-display { color: #0f172a !important; }
+        body.light-theme #scan-status { color: #475569 !important; }
+
+        body.light-theme #strategy-scanner, 
+        body.light-theme #strategy-vcp {
+            background-color: #ffffff !important;
+        }
+        /* ---------------------------------- */
+
+        /* Solid UI Overrides */
+        #strategy-scanner, #strategy-vcp {
+            background-color: var(--surface-color);
+        }
+        #strategy-scanner.border-accent {
+            background-color: #152721; /* Solid Dark Emerald Tint */
+        }
+        body.light-theme #strategy-scanner.border-accent {
+            background-color: #ecfdf5 !important; /* Solid Light Emerald Tint */
+        }
+
+        #universe-selector {
+            background-color: var(--bg-color) !important;
+        }
+
+        /* --- Section Header Masking --- */
+        .section-header-mask {
+            background: #030712;
+            box-shadow: 0 0 10px 10px #030712;
+            border-radius: 4px;
+            padding: 6px 12px;
+            z-index: 10;
+            position: relative;
+            margin-left: -12px; /* Offset padding for alignment */
+        }
+        body.light-theme .section-header-mask {
+            background: #f8fafc !important;
+            box-shadow: 0 0 10px 10px #f8fafc !important;
+        }
+        .section-header-mask h2, .section-header-mask div {
+            font-weight: 700 !important;
+            text-rendering: optimizeLegibility;
+        }
+        /* ------------------------------ */
+
+        .text-slate-300 { color: var(--text-primary); }
+        .text-slate-100 { color: var(--text-primary); }
+        .text-slate-500 { color: var(--text-secondary); }
+        .text-white { color: var(--text-primary); }
+        .bg-background { background-color: var(--bg-color); }
+        .bg-surface { background-color: var(--surface-color); }
+        .border-border { border-color: var(--border-color); }
+        
+        .terminal-border { border: 1px solid var(--border-color); }
+        .glass { background: var(--glass-bg); backdrop-filter: blur(12px); }
+        .tactical-card { background: var(--pod-bg); backdrop-filter: blur(12px); }
+
+        /* --- Global Interaction Transition --- */
+        button, .card-anim, select, .switch .slider {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        /* --- Main Action Buttons (Scan/Export) --- */
+        #scan-btn, #export-btn {
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+        #scan-btn:hover, #export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+            letter-spacing: 4px;
+        }
+        #scan-btn:active, #export-btn:active {
+            transform: translateY(0px) scale(0.98);
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+        }
+
+        /* --- Strategy Tabs --- */
+        #strategy-scanner, #strategy-vcp {
+            border: 1px solid var(--border-color);
+        }
+        #strategy-scanner:hover, #strategy-vcp:hover {
+            border-color: var(--accent-color);
+            background-color: rgba(52, 211, 153, 0.05);
+        }
+        body.light-theme #strategy-scanner:hover, 
+        body.light-theme #strategy-vcp:hover {
+            background-color: rgba(5, 150, 105, 0.05);
+        }
+
+        /* --- Live Signals Cards --- */
+        .card-anim { 
+            background-color: var(--surface-color) !important;
+            cursor: pointer; 
+            border: 1px solid var(--border-color);
+        }
+        .card-anim:hover { 
+            transform: translateY(-3px) scale(1.01);
+            border-color: var(--accent-color);
+            box-shadow: 0 10px 20px -10px rgba(16, 185, 129, 0.3);
+        }
+        body.light-theme .card-anim:hover {
+            box-shadow: 0 10px 20px -10px rgba(15, 23, 42, 0.15);
+        }
+        .card-anim:active { 
+            transform: translateY(-1px) scale(0.99);
+            opacity: 0.9; 
+        }
+
+        /* --- Dropdowns & Selection Inputs --- */
+        select {
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+        }
+        select:hover, select:focus {
+            border-color: var(--accent-color) !important;
+            outline: none;
+            box-shadow: 0 0 0 1px var(--accent-color);
+        }
+        
         @keyframes pulse-emerald {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.6; transform: scale(1.1); }
@@ -44,25 +251,173 @@
         .pulse-emerald { animation: pulse-emerald 2s infinite; }
 
         @keyframes neon-breathe {
-            from { text-shadow: 0 0 4px rgba(52, 211, 153, 0.2); }
-            to { text-shadow: 0 0 16px rgba(52, 211, 153, 0.6); }
+            from { text-shadow: 0 0 10px rgba(52, 211, 153, 0.4), 0 0 20px rgba(52, 211, 153, 0.2); }
+            to { text-shadow: 0 0 25px rgba(52, 211, 153, 0.9), 0 0 45px rgba(52, 211, 153, 0.5); }
         }
-        .brand-glow { animation: neon-breathe 4s ease-in-out infinite alternate; }
+        .brand-glow { animation: neon-breathe 3s ease-in-out infinite alternate; }
+
+        @keyframes border-pulse {
+            0%, 100% { border-color: rgba(52, 211, 153, 0.1); box-shadow: 0 0 15px rgba(52, 211, 153, 0.05); }
+            50% { border-color: rgba(52, 211, 153, 0.3); box-shadow: 0 0 30px rgba(52, 211, 153, 0.1); }
+        }
+        .tactical-card { border-width: 0.5px; animation: border-pulse 5s infinite ease-in-out; }
+        
+        .brand-text {
+            font-family: "Iceland", sans-serif;
+            font-weight: 400;
+            font-style: italic;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .theme-toggle {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* Custom Theme Switch - High-Tech Refactor */
+        .switch {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 48px;
+            height: 24px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #0b0f19;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 12px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 2px;
+            background-color: #10b981;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 50%;
+            box-shadow: 0 0 10px #10b981;
+        }
+
+        input:checked + .slider {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.08);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+            background-color: #059669;
+            box-shadow: 0 0 10px rgba(5, 150, 105, 0.6);
+        }
+
+        /* --- Mobile Responsive Logic (< 768px) --- */
+        @media (max-width: 767px) {
+            header .max-w-6xl {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                padding: 12px 16px;
+                height: auto;
+            }
+            
+            header {
+                height: auto;
+                min-height: 4rem;
+            }
+
+            .brand-text {
+                font-size: 1.25rem;
+            }
+
+            .flex.items-center.gap-\[16px\] {
+                gap: 8px;
+            }
+
+            .switch {
+                width: 40px;
+                height: 20px;
+            }
+            .slider:before {
+                height: 14px;
+                width: 14px;
+                left: 3px;
+                bottom: 2px;
+            }
+            input:checked + .slider:before {
+                transform: translateX(20px);
+            }
+
+            .max-w-6xl.mx-auto.px-4.pt-16 {
+                pt-24;
+            }
+
+            /* Hero Scaling */
+            .mb-12.p-8.rounded-3xl {
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            h1.brand-text {
+                font-size: 1.8rem !important;
+                letter-spacing: 2px !important;
+            }
+
+            /* Action Tabs Flex */
+            .mb-6.grid.grid-cols-2 {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            
+            #strategy-scanner, #strategy-vcp {
+                padding-top: 1rem;
+                padding-bottom: 1rem;
+                font-size: 8px;
+                letter-spacing: 0.1em;
+            }
+        }
     </style>
 </head>
-<body class="text-slate-300 font-mono selection:bg-accent/30 selection:text-accent">
+<body class="font-mono selection:bg-accent/30 selection:text-accent">
 
     <!-- Header -->
     <header class="fixed top-0 left-0 right-0 h-16 bg-background border-b border-border z-50 flex items-center">
         <div class="max-w-6xl mx-auto w-full flex items-center justify-between px-4">
             <div class="flex items-center gap-2">
-                <span class="text-lg md:text-xl uppercase">
-                    <span class="text-slate-100 font-bold font-mono tracking-wide">AAPNA</span><span class="text-emerald-400 font-bold font-mono tracking-wide">TRADER</span>
+                <span class="text-2xl brand-text">
+                    <span class="text-slate-100">AAPNA</span><span class="text-emerald-400 brand-glow">TRADER</span>
                 </span>
             </div>
-            <div class="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-border">
-                <div class="w-2 h-2 rounded-full bg-accent pulse-emerald"></div>
-                <span class="text-xs md:text-sm font-mono font-bold text-slate-300 uppercase tracking-wider">Sentinel Monitor</span>
+            <div class="flex items-center gap-[16px]">
+                <label class="switch">
+                    <input type="checkbox" id="theme-toggle">
+                    <span class="slider"></span>
+                </label>
+                <div class="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-border">
+                    <div class="w-2 h-2 rounded-full bg-accent pulse-emerald"></div>
+                    <span class="text-xs md:text-sm font-mono font-bold text-slate-300 uppercase tracking-wider">Sentinel Monitor</span>
+                </div>
             </div>
         </div>
     </header>
@@ -70,12 +425,41 @@
     <!-- Main structural layout container -->
     <div class="max-w-6xl mx-auto px-4 pt-16 pb-32 md:py-24">
         
-        <!-- Hero Section -->
-        <div class="mb-8 md:mb-12">
-            <h1 class="text-4xl md:text-6xl font-black italic tracking-widest leading-none mb-2 uppercase">
-                <span class="text-slate-100">AAPNA</span><span class="text-emerald-400 brand-glow">TRADER</span>
-            </h1>
-            <p class="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Momentum Logic Deck</p>
+        <!-- Hero Section (Tactical Pod) -->
+        <div class="mb-12 p-8 rounded-3xl border border-[#10b98122] bg-slate-950/60 backdrop-blur-xl max-w-[500px] mx-auto text-center relative overflow-hidden shadow-2xl tactical-card">
+            <div class="relative z-10 flex flex-col items-center">
+                <h1 class="text-[2.5rem] mb-4 brand-text leading-none">
+                    <span class="text-slate-100 drop-shadow-[0_0_10px_rgba(255,255,255,0.05)]">AAPNA</span><span class="text-emerald-400 brand-glow">TRADER</span>
+                </h1>
+                <p class="text-[10px] font-bold text-accent/60 uppercase tracking-[4px]">
+                    MOMENTUM LOGIC DECK
+                </p>
+            </div>
+            <!-- Ambient Background Glow -->
+            <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-accent/5 blur-[50px] rounded-full"></div>
+            <div class="absolute -top-10 -right-10 w-32 h-32 bg-accent/5 blur-[50px] rounded-full"></div>
+        </div>
+
+        <!-- Strategy Switcher -->
+        <div class="mb-6 grid grid-cols-2 gap-4">
+            <button id="strategy-scanner" class="border-accent text-accent bg-accent/10 border py-4 rounded text-[10px] font-black tracking-[0.2em] transition-all uppercase shadow-[0_0_20px_rgba(52,211,153,0.1)]">
+                MOMENTUM VELOCITY
+            </button>
+            <button id="strategy-vcp" class="border-border text-slate-500 bg-transparent border py-4 rounded text-[10px] font-black tracking-[0.2em] transition-all uppercase">
+                VCP Matrix
+            </button>
+        </div>
+
+        <!-- Universe Selector -->
+        <div class="mb-10 space-y-2">
+            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest block ml-1">Select Market Universe</label>
+            <select id="universe-selector" class="w-full bg-background border border-border text-slate-300 py-4 px-4 rounded text-[10px] font-bold tracking-widest uppercase focus:outline-none focus:border-accent transition-all cursor-pointer">
+                <option value="chunk1">Chunk 1: Large & Mid-caps (>₹15,000 Cr)</option>
+                <option value="chunk2">Chunk 2: Established Small-caps (₹5,000 Cr - ₹15,000 Cr)</option>
+                <option value="chunk3">Chunk 3: Micro-caps Alpha A (₹1,000 Cr - ₹5,000 Cr)</option>
+                <option value="chunk4">Chunk 4: Micro-caps Alpha B (₹500 Cr - ₹1,000 Cr)</option>
+                <option value="chunk5">Chunk 5: Nano-caps Momentum (₹100 Cr - ₹500 Cr)</option>
+            </select>
         </div>
 
         <!-- Responsive Flex/Grid Split -->
@@ -88,7 +472,7 @@
                 <div class="grid grid-cols-2 gap-px bg-border terminal-border rounded overflow-hidden">
                     <div class="bg-background p-4">
                         <div class="text-slate-500 text-[8px] font-bold uppercase tracking-widest mb-1">Matrix Engine</div>
-                        <div class="text-[11px] font-bold text-white uppercase">Nifty 500</div>
+                        <div id="matrix-engine-display" class="text-[11px] font-bold text-white uppercase">Nifty 500</div>
                     </div>
                     <div class="bg-background p-4">
                         <div class="text-slate-500 text-[8px] font-bold uppercase tracking-widest mb-1">System Status</div>
@@ -119,7 +503,7 @@
             <!-- Column B (Results Deck - Right Side on Desktop) -->
             <div class="md:col-span-7">
                 
-                <div class="flex justify-between items-center mb-4 pb-2 border-b border-border/50">
+                <div class="flex justify-between items-center mb-4 pb-2 border-b border-border/50 section-header-mask">
                     <h2 class="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Live Signals</h2>
                     <div id="result-count-badge" class="hidden text-[10px] font-bold text-accent uppercase tracking-widest">
                         Signals: <span id="signal-count">0</span>
@@ -152,14 +536,53 @@
         const resultsMeta = document.getElementById('results-meta');
         const signalCountSpan = document.getElementById('signal-count');
         const resultCountBadge = document.getElementById('result-count-badge');
+        
+        // Theme Toggle Refs
+        const themeToggle = document.getElementById('theme-toggle');
+        
+        // Strategy Switcher & Universe Refs
+        const strategyScannerBtn = document.getElementById('strategy-scanner');
+        const strategyVcpBtn = document.getElementById('strategy-vcp');
+        const universeSelector = document.getElementById('universe-selector');
+        const matrixEngineDisplay = document.getElementById('matrix-engine-display');
 
         let lastScanData = [];
+        let activeStrategy = 'current';
+
+        // --- Theme Logic ---
+        function setTheme(isLight) {
+            if (isLight) {
+                document.body.classList.add('light-theme');
+                themeToggle.checked = true;
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.body.classList.remove('light-theme');
+                themeToggle.checked = false;
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Initialize Theme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') {
+            setTheme(true);
+        } else {
+            setTheme(false);
+        }
+
+        themeToggle.addEventListener('change', () => {
+            setTheme(themeToggle.checked);
+        });
+        // ------------------
 
         async function triggerScan() {
+            // UI Visual Update for Matrix Engine
+            matrixEngineDisplay.textContent = universeSelector.options[universeSelector.selectedIndex].text.split('(')[0].trim();
+
             scanBtn.disabled = true;
             resultsMeta.classList.add('hidden');
             resultCountBadge.classList.add('hidden');
-            btnText.textContent = 'Analyzing Nifty 500...';
+            btnText.textContent = `Analyzing ${activeStrategy.toUpperCase()} Universe...`;
             loadingSpinner.classList.remove('hidden');
             
             scanStatus.textContent = 'Active';
@@ -167,7 +590,8 @@
             scanStatus.classList.add('animate-pulse');
 
             try {
-                const response = await fetch('/api/scan');
+                const universe = universeSelector.value;
+                const response = await fetch(`/api/scan?strategy=${activeStrategy}&universe=${universe}`);
                 const result = await response.json();
 
                 if (result.status === 'success') {
@@ -194,6 +618,22 @@
             }
         }
 
+        function updateStrategy(strategy) {
+            activeStrategy = strategy;
+            
+            // UI Toggle Logic
+            [strategyScannerBtn, strategyVcpBtn].forEach(btn => {
+                btn.classList.remove('border-accent', 'text-accent', 'bg-accent/10', 'shadow-[0_0_20px_rgba(52,211,153,0.1)]');
+                btn.classList.add('border-border', 'text-slate-500', 'bg-transparent');
+            });
+
+            const activeBtn = strategy === 'current' ? strategyScannerBtn : strategyVcpBtn;
+            activeBtn.classList.remove('border-border', 'text-slate-500', 'bg-transparent');
+            activeBtn.classList.add('border-accent', 'text-accent', 'bg-accent/10', 'shadow-[0_0_20px_rgba(52,211,153,0.1)]');
+
+            triggerScan();
+        }
+
         function renderSignals(stocks) {
             if (stocks.length === 0) {
                 emptyState.classList.remove('hidden');
@@ -217,15 +657,15 @@
                                 <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Entry: ₹${stock.price.toLocaleString('en-IN')}</span>
                             </div>
                         </div>
-                        <div class="bg-emerald-950 px-3 py-1 rounded border border-accent/20">
-                            <span class="text-[10px] font-black text-accent uppercase tracking-tighter">Score: ${stock.score}</span>
+                        <div class="score-badge">
+                            <span class="text-[10px] uppercase tracking-tighter">Score: ${stock.score}</span>
                         </div>
                     </div>
 
                     <div class="flex justify-between items-center text-[9px] font-bold uppercase tracking-widest text-slate-500">
                         <div class="flex gap-4">
-                            <span>9 EMA: <span class="text-slate-300">${stock.ema9}</span></span>
-                            <span>20 EMA: <span class="text-slate-300">${stock.ema20}</span></span>
+                            <span>${activeStrategy === 'vcp' ? 'T2 COMP' : '9 EMA'}: <span class="text-slate-300">${activeStrategy === 'vcp' ? stock.ema9 + '%' : stock.ema9}</span></span>
+                            <span>${activeStrategy === 'vcp' ? 'T3 COMP' : '20 EMA'}: <span class="text-slate-300">${activeStrategy === 'vcp' ? stock.ema20 + '%' : stock.ema20}</span></span>
                         </div>
                         <span class="text-accent flex items-center gap-1.5">
                             <span class="w-1 h-1 bg-accent rounded-full animate-pulse"></span>
@@ -269,6 +709,9 @@
 
         scanBtn.addEventListener('click', triggerScan);
         exportBtn.addEventListener('click', exportToCSV);
+        strategyScannerBtn.addEventListener('click', () => updateStrategy('current'));
+        strategyVcpBtn.addEventListener('click', () => updateStrategy('vcp'));
+        universeSelector.addEventListener('change', () => triggerScan());
     </script>
     <script>
         document.addEventListener('click', function(event) {
