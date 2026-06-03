@@ -319,28 +319,7 @@
                 let ticker = match[0].trim();
                 event.stopImmediatePropagation();
                 event.preventDefault();
-
-                const modal = document.getElementById("chart-modal");
-                if (modal) {
-                    modal.classList.remove('opacity-0', 'pointer-events-none');
-                    modal.classList.add('opacity-100', 'pointer-events-auto');
-                }
-                
-                const titleDisplay = document.getElementById("modal-ticker-title");
-                if (titleDisplay) {
-                    titleDisplay.innerHTML = `VIEWING MATRIX: <span class="text-emerald-400">NSE:${ticker}</span>`;
-                }
-                
-                const container = document.getElementById("tradingview-widget-container");
-                if (container) {
-                    container.innerHTML = '';
-                    const iframe = document.createElement('iframe');
-                    iframe.style.width = '100%';
-                    iframe.style.height = '100%';
-                    iframe.style.border = 'none';
-                    iframe.src = 'https://charts.whotrades.com/embedded?symbol=' + ticker + '&period=D&theme=dark&hide_side_panel=true';
-                    container.appendChild(iframe);
-                }
+                window.open('https://www.tradingview.com/chart/?symbol=NSE:' + ticker, '_blank');
             }
         }
     }, true);
