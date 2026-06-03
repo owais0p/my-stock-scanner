@@ -310,19 +310,28 @@
         });
     </script>
     <script>
+    // Ultimate unblockable native link handler for Hugging Face cloud environments
     document.addEventListener('click', function(event) {
+        // 1. Find the nearest clicked stock signal card component
         const card = event.target.closest('[id*="card-"]') || event.target.closest('.stock-card') || event.target.closest('[onclick]');
+        
         if (card) {
+            // 2. Extract the ticker text string dynamically from the card contents
             let tickerText = card.querySelector('h3, .ticker, bold, span')?.innerText || card.innerText;
             let match = tickerText.match(/[A-Z]+/);
+            
             if (match) {
                 let ticker = match[0].trim();
+                
+                // Stop any broken local overlay script modals from interrupting the action
                 event.stopImmediatePropagation();
                 event.preventDefault();
-                window.open('https://www.tradingview.com/chart/?symbol=NSE:' + ticker, '_blank');
+                
+                // 3. Launch a clean, lightning-fast native browser tab directly to the live daily candlestick chart
+                window.open(`https://www.tradingview.com/chart/?symbol=NSE:${ticker}`, '_blank');
             }
         }
-    }, true);
+    }, true); // High priority execution flag overrides all local script limits
     </script>
 </body>
 </html>
