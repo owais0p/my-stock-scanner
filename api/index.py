@@ -117,21 +117,23 @@ async def run_scan(
                     
                     # Robust Volume Fallback (Safe for late-night data gaps)
                     try:
-                        v_val = int(volume.dropna().iloc[-1])
+                        val = next((int(v) for v in reversed(volume.dropna().values) if v > 0), 0)
                     except Exception:
-                        v_val = 0
+                        val = 0
                     
-                    if not v_val:
+                    if not val:
                         try:
-                            v_val = int(yf.Ticker(ticker).history(period="5d")["Volume"].dropna().iloc[-1])
+                            # Secondary fallback to 5-day history for delisted/stale data
+                            v_hist = yf.Ticker(ticker).history(period="5d")["Volume"].dropna()
+                            val = next((int(v) for v in reversed(v_hist.values) if v > 0), 0)
                         except Exception:
-                            v_val = 0
+                            val = 0
 
                     match_found = True
                     metadata = {
                         "ticker": ticker.replace(".NS", ""),
                         "price": round(last_close, 2),
-                        "Volume": v_val,
+                        "Volume": val,
                         "ema9": round(l_ema9, 2),
                         "ema20": round(l_ema20, 2),
                         "score": score,
@@ -159,21 +161,23 @@ async def run_scan(
                     if volume.iloc[-8:].mean() < volume.iloc[-16:-8].mean():
                         # Robust Volume Fallback (Safe for late-night data gaps)
                         try:
-                            v_val = int(volume.dropna().iloc[-1])
+                            val = next((int(v) for v in reversed(volume.dropna().values) if v > 0), 0)
                         except Exception:
-                            v_val = 0
+                            val = 0
                         
-                        if not v_val:
+                        if not val:
                             try:
-                                v_val = int(yf.Ticker(ticker).history(period="5d")["Volume"].dropna().iloc[-1])
+                                # Secondary fallback to 5-day history for delisted/stale data
+                                v_hist = yf.Ticker(ticker).history(period="5d")["Volume"].dropna()
+                                val = next((int(v) for v in reversed(v_hist.values) if v > 0), 0)
                             except Exception:
-                                v_val = 0
+                                val = 0
 
                         match_found = True
                         metadata = {
                             "ticker": ticker.replace(".NS", ""),
                             "price": round(last_close, 2),
-                            "Volume": v_val,
+                            "Volume": val,
                             "ema9": round(range_t2 * 100, 1), # Reusing schema for T2 comp
                             "ema20": round(range_t3 * 100, 1), # Reusing schema for T3 comp
                             "score": vcp_score,

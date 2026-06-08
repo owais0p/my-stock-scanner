@@ -559,7 +559,7 @@
 
         // --- Volume Formatter Utility ---
         function formatVolume(vol) {
-            if (vol === 0) return '0';
+            if (vol === 0 || vol === '0') return '<1K';
             if (!vol) return 'N/A';
             if (vol >= 10000000) return (vol / 10000000).toFixed(2) + 'Cr';
             if (vol >= 100000) return (vol / 100000).toFixed(2) + 'L';
