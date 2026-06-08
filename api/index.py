@@ -115,10 +115,23 @@ async def run_scan(
                     pct_diff = ((last_close - l_ema20) / l_ema20) * 100
                     score = round(100 - pct_diff, 2)
                     
+                    # Robust Volume Fallback (Safe for late-night data gaps)
+                    try:
+                        v_val = int(volume.dropna().iloc[-1])
+                    except Exception:
+                        v_val = 0
+                    
+                    if not v_val:
+                        try:
+                            v_val = int(yf.Ticker(ticker).history(period="5d")["Volume"].dropna().iloc[-1])
+                        except Exception:
+                            v_val = 0
+
                     match_found = True
                     metadata = {
                         "ticker": ticker.replace(".NS", ""),
                         "price": round(last_close, 2),
+                        "Volume": v_val,
                         "ema9": round(l_ema9, 2),
                         "ema20": round(l_ema20, 2),
                         "score": score,
@@ -144,10 +157,23 @@ async def run_scan(
                     
                     # Volume Contraction Check (Supply absorption)
                     if volume.iloc[-8:].mean() < volume.iloc[-16:-8].mean():
+                        # Robust Volume Fallback (Safe for late-night data gaps)
+                        try:
+                            v_val = int(volume.dropna().iloc[-1])
+                        except Exception:
+                            v_val = 0
+                        
+                        if not v_val:
+                            try:
+                                v_val = int(yf.Ticker(ticker).history(period="5d")["Volume"].dropna().iloc[-1])
+                            except Exception:
+                                v_val = 0
+
                         match_found = True
                         metadata = {
                             "ticker": ticker.replace(".NS", ""),
                             "price": round(last_close, 2),
+                            "Volume": v_val,
                             "ema9": round(range_t2 * 100, 1), # Reusing schema for T2 comp
                             "ema20": round(range_t3 * 100, 1), # Reusing schema for T3 comp
                             "score": vcp_score,

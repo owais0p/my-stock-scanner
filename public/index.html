@@ -557,6 +557,16 @@
         let lastScanData = [];
         let activeStrategy = 'current';
 
+        // --- Volume Formatter Utility ---
+        function formatVolume(vol) {
+            if (vol === 0) return '0';
+            if (!vol) return 'N/A';
+            if (vol >= 10000000) return (vol / 10000000).toFixed(2) + 'Cr';
+            if (vol >= 100000) return (vol / 100000).toFixed(2) + 'L';
+            if (vol >= 1000) return (vol / 1000).toFixed(1) + 'K';
+            return vol.toString();
+        }
+
         // --- Client-side Search Filter ---
         tickerSearch.addEventListener('input', (e) => {
             const query = e.target.value.toUpperCase();
@@ -669,6 +679,7 @@
             signalsContainer.innerHTML = '';
 
             stocks.forEach((stock, index) => {
+                const rawVolume = stock.Volume || stock.volume || stock.VOL || stock.vol || 0;
                 const card = document.createElement('div');
                 card.className = 'bg-surface border border-border p-5 rounded-lg card-anim relative overflow-hidden group hover:border-accent/30';
                 
@@ -678,6 +689,7 @@
                             <h3 class="font-black text-xl tracking-tight text-white leading-none uppercase">${stock.ticker}</h3>
                             <div class="flex items-center gap-2 mt-1.5">
                                 <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">CMP: ₹${stock.price.toLocaleString('en-IN')}</span>
+                                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-2">VOL: ${formatVolume(rawVolume)}</span>
                             </div>
                         </div>
                         <div class="score-badge">
@@ -704,15 +716,19 @@
         function exportToCSV() {
             if (lastScanData.length === 0) return;
 
-            const headers = ['Ticker', 'Price (INR)', '9 EMA', '20 EMA', 'Momentum Condition', 'Tightness Score'];
-            const rows = lastScanData.map(stock => [
-                stock.ticker,
-                stock.price,
-                stock.ema9,
-                stock.ema20,
-                stock.setup,
-                stock.score
-            ]);
+            const headers = ['Ticker', 'Price (INR)', 'Volume', '9 EMA', '20 EMA', 'Momentum Condition', 'Tightness Score'];
+            const rows = lastScanData.map(stock => {
+                const rawVolume = stock.Volume || stock.volume || stock.VOL || stock.vol || 0;
+                return [
+                    stock.ticker,
+                    stock.price,
+                    rawVolume,
+                    stock.ema9,
+                    stock.ema20,
+                    stock.setup,
+                    stock.score
+                ];
+            });
 
             let csvContent = "data:text/csv;charset=utf-8," 
                 + headers.join(",") + "\n"
