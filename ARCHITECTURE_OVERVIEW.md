@@ -16,6 +16,9 @@ This document provides a comprehensive breakdown of the engineering decisions, t
 - **Logic Parameters**:
     - `strategy`: Supports `current` (MOMENTUM VELOCITY: 9/20 EMA Breakouts) and `vcp` (VCP MATRIX: Minervini Compression).
     - `universe`: Targets specific market slices from `chunk1` to `chunk5`.
+- **Performance Optimizations**:
+    - **Fast Price Lookup**: Implements `fast_info` metadata retrieval with a strict **0.5s thread-based timeout** to eliminate network-loop lag.
+    - **Historical Volume Fallback**: Intelligent lookback logic that scans for the last non-zero trading session's volume, ensuring data consistency during off-market hours.
 - **Institutional Guardrails**:
     - **Price Floor**: Strict `if last_close < 50` rule to eliminate high-risk penny stocks.
     - **Liquidity Barrier**: Enforces a minimum **100k average daily volume** (20-day baseline) to ensure tradeability.
@@ -26,11 +29,14 @@ This document provides a comprehensive breakdown of the engineering decisions, t
 ## 3. Frontend Design (Institutional Terminal UI)
 - **Architecture**: Single-Page Application (SPA) using Vanilla JavaScript and Tailwind CSS.
 - **Tactical Workspace**:
+    - **Ticker Search**: High-contrast monospace field for instant client-side filtering of results without additional API overhead.
     - **Strategy Switcher**: High-response toggle for swapping between Momentum and VCP engines.
     - **Market Universe Selector**: Cyber-tactical dropdown for targeting specific market cap chunks.
     - **Dynamic Matrix Display**: Real-time UI label updates reflecting the active market segment.
     - **Theme System**: Premium Dark Obsidian / Slate Workstation toggle with `localStorage` persistence and high-contrast accessibility overrides.
 - **Visual Identity**:
+    - **Terminology**: Swapped "Entry" for **"CMP"** (Current Market Price) for professional clarity.
+    - **Volume Formatting**: Custom utility handles large values with suffixes (K, L, Cr) and provides a visual fallback (**<1K**) for sparse historical data.
     - **Typography**: 'Iceland' (Google Fonts) for branding; 'JetBrains Mono' for metrics; 'Inter' for UI.
     - **Background Layering**: 3x dense technical textures (Cyber-Grid for Dark, Dot-Matrix for Light) isolated on a fixed pseudo-element to prevent overlapping with content.
     - **Tactile Interactions**: Cubic-bezier transitions, hover-lift effects, and mechanical click feedback on all buttons and cards.
@@ -38,7 +44,7 @@ This document provides a comprehensive breakdown of the engineering decisions, t
     - **Advanced Signal Cards**: 4px left-accent strips, floating shadow profiles, and sleek HUD-style tactical badges.
     - **Section Masking**: Section headers use opaque background shielding to ensure 100% legibility above dense textures.
     - **Native Tab Redirection**: Global click interceptor launches TradingView charts directly in new tabs for zero-latency analysis.
-    - **Client-Side Export**: Browser-side CSV generation using Blobs.
+    - **Client-Side Export**: Browser-side CSV generation (including Volume data) using Blobs.
 
 ## 4. Deployment Strategy
 - **Automation**: GitHub integration with Hugging Face for automated Docker builds.
