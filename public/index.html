@@ -510,6 +510,13 @@
                     </div>
                 </div>
 
+                <!-- Client-side Ticker Search -->
+                <div class="mb-4 relative group">
+                    <div class="absolute -inset-0.5 bg-accent/20 rounded blur opacity-0 group-focus-within:opacity-100 transition duration-300"></div>
+                    <input type="text" id="ticker-search" placeholder="[ TICKER_SEARCH ]" 
+                        class="relative w-full bg-background border border-border text-slate-300 py-3 px-4 rounded text-[10px] font-bold tracking-widest uppercase focus:outline-none focus:border-accent transition-all placeholder:text-slate-600">
+                </div>
+
                 <div id="signals-container" class="space-y-3 min-h-[300px]">
                     <!-- Low-Profile Idle State -->
                     <div id="empty-state" class="py-20 flex flex-col items-center justify-center gap-4 terminal-border border-dashed rounded-[2rem]">
@@ -545,9 +552,25 @@
         const strategyVcpBtn = document.getElementById('strategy-vcp');
         const universeSelector = document.getElementById('universe-selector');
         const matrixEngineDisplay = document.getElementById('matrix-engine-display');
+        const tickerSearch = document.getElementById('ticker-search');
 
         let lastScanData = [];
         let activeStrategy = 'current';
+
+        // --- Client-side Search Filter ---
+        tickerSearch.addEventListener('input', (e) => {
+            const query = e.target.value.toUpperCase();
+            const cards = signalsContainer.querySelectorAll('.card-anim');
+            
+            cards.forEach(card => {
+                const ticker = card.querySelector('h3').textContent.toUpperCase();
+                if (ticker.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
 
         // --- Theme Logic ---
         function setTheme(isLight) {
@@ -654,7 +677,7 @@
                         <div>
                             <h3 class="font-black text-xl tracking-tight text-white leading-none uppercase">${stock.ticker}</h3>
                             <div class="flex items-center gap-2 mt-1.5">
-                                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Entry: ₹${stock.price.toLocaleString('en-IN')}</span>
+                                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">CMP: ₹${stock.price.toLocaleString('en-IN')}</span>
                             </div>
                         </div>
                         <div class="score-badge">
