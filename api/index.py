@@ -89,6 +89,8 @@ async def run_scan(
             close = df["Close"]
             volume = df["Volume"]
             last_close = close.iloc[-1]
+            prev_close = close.iloc[-2]
+            change = round(((last_close - prev_close) / prev_close) * 100, 2)
             
             # ====================================================
             # 🛡️ INSTITUTIONAL FILTERS (PENNY & LIQUIDITY BARRIERS)
@@ -133,6 +135,7 @@ async def run_scan(
                     metadata = {
                         "ticker": ticker.replace(".NS", ""),
                         "price": round(last_close, 2),
+                        "change": change,
                         "Volume": val,
                         "ema9": round(l_ema9, 2),
                         "ema20": round(l_ema20, 2),
@@ -177,6 +180,7 @@ async def run_scan(
                         metadata = {
                             "ticker": ticker.replace(".NS", ""),
                             "price": round(last_close, 2),
+                            "change": change,
                             "Volume": val,
                             "ema9": round(range_t2 * 100, 1), # Reusing schema for T2 comp
                             "ema20": round(range_t3 * 100, 1), # Reusing schema for T3 comp

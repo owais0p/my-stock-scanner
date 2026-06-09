@@ -95,7 +95,7 @@
         body.light-theme .brand-text span:first-child { color: #0f172a !important; }
         
         body.light-theme .card-anim h3,
-        body.light-theme .card-anim span:not(.text-accent) { color: #0f172a !important; }
+        body.light-theme .card-anim span:not(.text-accent):not(.signal-up):not(.signal-down) { color: #0f172a !important; }
 
         body.light-theme .tactical-card { 
             background: #ffffff !important; 
@@ -125,12 +125,19 @@
         body.light-theme select option { color: #1e293b !important; }
         
         body.light-theme #matrix-engine-display { color: #0f172a !important; }
-        body.light-theme #scan-status { color: #475569 !important; }
+        body.light-theme #scan-status:not(.signal-up):not(.signal-down) { color: #475569 !important; }
 
         body.light-theme #strategy-scanner, 
         body.light-theme #strategy-vcp {
             background-color: #ffffff !important;
         }
+
+        /* High-Contrast Signal Overrides (Theme Agnostic) */
+        .signal-up { color: #34D399 !important; font-weight: 800 !important; }
+        .signal-down { color: #f87171 !important; font-weight: 800 !important; }
+        
+        body.light-theme .signal-up { color: #059669 !important; }
+        body.light-theme .signal-down { color: #dc2626 !important; }
         /* ---------------------------------- */
 
         /* Solid UI Overrides */
@@ -619,8 +626,8 @@
             loadingSpinner.classList.remove('hidden');
             
             scanStatus.textContent = 'Active';
-            scanStatus.classList.replace('text-slate-500', 'text-accent');
-            scanStatus.classList.add('animate-pulse');
+            scanStatus.classList.remove('text-slate-500', 'signal-down');
+            scanStatus.classList.add('signal-up', 'animate-pulse');
 
             try {
                 const universe = universeSelector.value;
@@ -642,7 +649,7 @@
             } catch (error) {
                 console.error('Scan Error:', error);
                 scanStatus.textContent = 'Error';
-                scanStatus.classList.replace('text-accent', 'text-red-500');
+                scanStatus.classList.replace('signal-up', 'signal-down');
             } finally {
                 scanBtn.disabled = false;
                 btnText.textContent = 'Re-Execute System Scan';
@@ -689,6 +696,7 @@
                             <h3 class="font-black text-xl tracking-tight text-white leading-none uppercase">${stock.ticker}</h3>
                             <div class="flex items-center gap-2 mt-1.5">
                                 <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">CMP: ₹${stock.price.toLocaleString('en-IN')}</span>
+                                <span class="text-[9px] ${stock.change >= 0 ? 'signal-up' : 'signal-down'} uppercase tracking-widest ml-1">(${stock.change >= 0 ? '+' : ''}${stock.change}%)</span>
                                 <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-2">VOL: ${formatVolume(rawVolume)}</span>
                             </div>
                         </div>
@@ -716,12 +724,13 @@
         function exportToCSV() {
             if (lastScanData.length === 0) return;
 
-            const headers = ['Ticker', 'Price (INR)', 'Volume', '9 EMA', '20 EMA', 'Momentum Condition', 'Tightness Score'];
+            const headers = ['Ticker', 'Price (INR)', 'Change (%)', 'Volume', '9 EMA', '20 EMA', 'Momentum Condition', 'Tightness Score'];
             const rows = lastScanData.map(stock => {
                 const rawVolume = stock.Volume || stock.volume || stock.VOL || stock.vol || 0;
                 return [
                     stock.ticker,
                     stock.price,
+                    stock.change,
                     rawVolume,
                     stock.ema9,
                     stock.ema20,
