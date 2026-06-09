@@ -14,6 +14,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
@@ -41,45 +42,82 @@
             --text-secondary: #94a3b8;
             --glass-bg: #111827;
             --pod-bg: #111827;
-            --bg-texture: linear-gradient(rgba(16, 185, 129, 0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(16, 185, 129, 0.12) 1px, transparent 1px);
-            --bg-size: 16px 16px;
         }
 
         body.light-theme {
-            --bg-color: #f8fafc;
+            --bg-color: #f4f6f9;
             --surface-color: #ffffff;
             --accent-color: #059669;
-            --border-color: #cbd5e1;
-            --text-primary: #0f172a;
-            --text-secondary: #0f172a; 
-            --glass-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #475569; 
+            --glass-bg: rgba(255, 255, 255, 0.8);
             --pod-bg: #ffffff;
-            --bg-texture: radial-gradient(rgba(15, 23, 42, 0.18) 1px, transparent 1px);
-            --bg-size: 12px 12px;
+        }
+
+        body.dark {
+            --bg-color: #030712;
+            --surface-color: #0b0f19;
+        }
+
+        /* Targeted Hardware-Accelerated Theme Transition */
+        .theme-transition {
+            transition: background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease !important;
+            will-change: background-color, border-color;
         }
 
         body { 
             background-color: var(--bg-color); 
             color: var(--text-secondary);
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
             -webkit-tap-highlight-color: transparent; 
             position: relative;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        body::before {
+        body.dark .card-anim {
+            background-color: rgba(11, 15, 25, 0.9) !important;
+            border-color: rgba(30, 41, 59, 0.9) !important;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2) !important;
+        }
+        body.dark .card-anim:hover {
+            border-color: rgba(51, 65, 85, 0.8) !important;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35) !important;
+            transform: translateY(-2px);
+        }
+
+        /* Optimized Dual-Layer Background Texture */
+        body::before, body::after {
             content: "";
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: var(--bg-texture);
-            background-size: var(--bg-size);
             z-index: 0;
             pointer-events: none;
-            transition: background-image 0.3s ease;
+            transition: opacity 500ms cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateZ(0);
+            backface-visibility: hidden;
         }
+
+        /* Dark Grid */
+        body::before {
+            background-image: linear-gradient(rgba(16, 185, 129, 0.12) 1px, transparent 1px), 
+                              linear-gradient(90deg, rgba(16, 185, 129, 0.12) 1px, transparent 1px);
+            background-size: 16px 16px;
+            opacity: 1;
+        }
+
+        /* Light Texture */
+        body::after {
+            background-image: radial-gradient(rgba(15, 23, 42, 0.12) 1px, transparent 1px);
+            background-size: 12px 12px;
+            opacity: 0;
+        }
+
+        body.light-theme::before { opacity: 0; }
+        body.light-theme::after { opacity: 1; }
 
         /* --- Content Isolation Layer --- */
         body > * {
@@ -99,37 +137,44 @@
 
         body.light-theme .tactical-card { 
             background: #ffffff !important; 
-            border: 1px solid rgba(16, 185, 129, 0.2) !important; 
+            border: 1px solid rgba(16, 185, 129, 0.1) !important; 
             backdrop-filter: blur(16px) !important; 
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05) !important;
+            box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.05) !important;
         }
 
         body.light-theme .card-anim {
             background-color: #ffffff !important;
-            border: 1px solid #e2e8f0;
+            border: 1px solid rgba(226, 232, 240, 0.6) !important;
             border-left: 4px solid #059669 !important;
+            box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.05) !important;
+        }
+
+        body.light-theme #scan-btn,
+        body.light-theme #export-btn {
+            box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3) !important;
         }
 
         body.light-theme .score-badge {
-            background: rgba(5, 150, 105, 0.1) !important;
-            border: 1px solid rgba(5, 150, 105, 0.3) !important;
+            background: rgba(5, 150, 105, 0.08) !important;
+            border: 1px solid rgba(5, 150, 105, 0.2) !important;
             color: #059669 !important;
         }
 
         body.light-theme select {
             color: #1e293b !important;
-            border-color: #94a3b8 !important; 
+            border-color: #e2e8f0 !important; 
             background-color: #ffffff !important;
         }
         
         body.light-theme select option { color: #1e293b !important; }
         
-        body.light-theme #matrix-engine-display { color: #0f172a !important; }
-        body.light-theme #scan-status:not(.signal-up):not(.signal-down) { color: #475569 !important; }
+        body.light-theme #matrix-engine-display { color: #1e293b !important; }
+        body.light-theme #scan-status:not(.signal-up):not(.signal-down) { color: #64748b !important; }
 
         body.light-theme #strategy-scanner, 
         body.light-theme #strategy-vcp {
             background-color: #ffffff !important;
+            border-color: #e2e8f0 !important;
         }
 
         /* High-Contrast Signal Overrides (Theme Agnostic) */
@@ -197,11 +242,15 @@
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
             position: relative;
             overflow: hidden;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
         }
         #scan-btn:hover, #export-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 6px 20px rgba(5, 150, 105, 0.25);
             letter-spacing: 4px;
+        }
+        body.light-theme #scan-btn:hover {
+            background-color: #059669 !important; /* emerald-600 */
         }
         #scan-btn:active, #export-btn:active {
             transform: translateY(0px) scale(0.98);
@@ -218,7 +267,9 @@
         }
         body.light-theme #strategy-scanner:hover, 
         body.light-theme #strategy-vcp:hover {
-            background-color: rgba(5, 150, 105, 0.05);
+            background-color: #f8fafc; /* slate-50 */
+            color: #0f172a; /* slate-900 */
+            border-color: rgba(226, 232, 240, 0.8); /* slate-200/80 */
         }
 
         /* --- Live Signals Cards --- */
@@ -228,12 +279,13 @@
             border: 1px solid var(--border-color);
         }
         .card-anim:hover { 
-            transform: translateY(-3px) scale(1.01);
+            transform: translateY(-2px);
             border-color: var(--accent-color);
-            box-shadow: 0 10px 20px -10px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease !important;
         }
         body.light-theme .card-anim:hover {
-            box-shadow: 0 10px 20px -10px rgba(15, 23, 42, 0.15);
+            border-color: rgba(203, 213, 225, 0.9) !important; /* slate-300/90 */
         }
         .card-anim:active { 
             transform: translateY(-1px) scale(0.99);
@@ -406,10 +458,10 @@
         }
     </style>
 </head>
-<body class="font-mono selection:bg-accent/30 selection:text-accent">
+<body class="font-mono selection:bg-accent/30 selection:text-accent theme-transition">
 
     <!-- Header -->
-    <header class="fixed top-0 left-0 right-0 h-16 bg-background border-b border-border z-50 flex items-center">
+    <header class="fixed top-0 left-0 right-0 h-16 bg-background border-b border-border z-50 flex items-center theme-transition">
         <div class="max-w-6xl mx-auto w-full flex items-center justify-between px-4">
             <div class="flex items-center gap-2">
                 <span class="text-2xl brand-text">
@@ -421,9 +473,12 @@
                     <input type="checkbox" id="theme-toggle">
                     <span class="slider"></span>
                 </label>
-                <div class="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-border">
-                    <div class="w-2 h-2 rounded-full bg-accent pulse-emerald"></div>
-                    <span class="text-xs md:text-sm font-mono font-bold text-slate-300 uppercase tracking-wider">Sentinel Monitor</span>
+                <div class="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-mono tracking-widest uppercase font-bold border transition-all duration-300 bg-slate-100/80 text-slate-700 border-slate-200/80 shadow-sm hover:bg-slate-200/50 dark:bg-[#0d131f]/90 dark:text-slate-300 dark:border-slate-800/80 dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)] dark:hover:border-emerald-500/40 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.1)] dark:hover:text-emerald-400 cursor-default">
+                    <span class="relative flex h-2 w-2">
+                        <span class="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    Sentinel Monitor
                 </div>
             </div>
         </div>
@@ -448,11 +503,11 @@
         </div>
 
         <!-- Strategy Switcher -->
-        <div class="mb-6 grid grid-cols-2 gap-4">
-            <button id="strategy-scanner" class="border-accent text-accent bg-accent/10 border py-4 rounded text-[10px] font-black tracking-[0.2em] transition-all uppercase shadow-[0_0_20px_rgba(52,211,153,0.1)]">
+        <div class="mb-6 grid grid-cols-2 gap-4 theme-transition">
+            <button id="strategy-scanner" class="bg-emerald-50/40 text-emerald-700 border-2 border-emerald-500 font-bold shadow-[0_2px_10px_rgba(5,150,105,0.06)] py-4 rounded text-[10px] tracking-[0.2em] transition-all duration-300 ease-out active:scale-[0.99] hover:transform-none uppercase dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-500/80 dark:shadow-[0_0_15px_rgba(16,185,129,0.15)]">
                 MOMENTUM VELOCITY
             </button>
-            <button id="strategy-vcp" class="border-border text-slate-500 bg-transparent border py-4 rounded text-[10px] font-black tracking-[0.2em] transition-all uppercase">
+            <button id="strategy-vcp" class="bg-white hover:bg-emerald-50/30 text-slate-600 hover:text-emerald-600 border border-slate-200/80 hover:border-emerald-300/80 shadow-sm hover:shadow-[0_8px_20px_-4px_rgba(5,150,105,0.12)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase dark:bg-[#0d131f]/60 dark:text-slate-400 dark:border-slate-800/80 dark:hover:bg-[#111827] dark:hover:text-emerald-400 dark:hover:border-emerald-500/40 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.08)]">
                 VCP Matrix
             </button>
         </div>
@@ -473,7 +528,7 @@
         <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
             
             <!-- Column A (Control Section - Left Side on Desktop) -->
-            <div class="md:col-span-5 space-y-6">
+            <div class="md:col-span-5 space-y-6 theme-transition">
                 
                 <!-- Metric Grid -->
                 <div class="grid grid-cols-2 gap-px bg-border terminal-border rounded overflow-hidden">
@@ -590,13 +645,16 @@
         });
 
         // --- Theme Logic ---
-        function setTheme(isLight) {
+        function setTheme(isLight, animate = true) {
+            // Transitions are handled by the static .theme-transition class on layout containers
             if (isLight) {
                 document.body.classList.add('light-theme');
+                document.documentElement.classList.remove('dark');
                 themeToggle.checked = true;
                 localStorage.setItem('theme', 'light');
             } else {
                 document.body.classList.remove('light-theme');
+                document.documentElement.classList.add('dark');
                 themeToggle.checked = false;
                 localStorage.setItem('theme', 'dark');
             }
@@ -605,13 +663,13 @@
         // Initialize Theme
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'light') {
-            setTheme(true);
+            setTheme(true, false);
         } else {
-            setTheme(false);
+            setTheme(false, false);
         }
 
         themeToggle.addEventListener('change', () => {
-            setTheme(themeToggle.checked);
+            setTheme(themeToggle.checked, true);
         });
         // ------------------
 
@@ -661,15 +719,15 @@
         function updateStrategy(strategy) {
             activeStrategy = strategy;
             
-            // UI Toggle Logic
+            const inactiveClass = 'bg-white hover:bg-gradient-to-tr hover:from-white hover:to-emerald-50/30 text-slate-600 hover:text-emerald-600 border border-slate-200/80 hover:border-emerald-300/80 shadow-sm hover:shadow-[0_8px_20px_-4px_rgba(5,150,105,0.12)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase dark:bg-[#0d131f]/60 dark:text-slate-400 dark:border-slate-800/80 dark:hover:bg-[#111827] dark:hover:text-emerald-400 dark:hover:border-emerald-500/30 dark:hover:shadow-[0_4px_20px_rgba(16,185,129,0.08)] dark:hover:-translate-y-[2px]';
+            const activeClass = 'bg-emerald-50/40 text-emerald-700 border-2 border-emerald-500 font-bold shadow-[0_2px_10px_rgba(5,150,105,0.06)] py-4 rounded text-[10px] tracking-[0.2em] transition-all duration-300 ease-out active:scale-[0.99] hover:transform-none uppercase dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-500/80 dark:shadow-[0_0_15px_rgba(16,185,129,0.15)] font-bold';
+
             [strategyScannerBtn, strategyVcpBtn].forEach(btn => {
-                btn.classList.remove('border-accent', 'text-accent', 'bg-accent/10', 'shadow-[0_0_20px_rgba(52,211,153,0.1)]');
-                btn.classList.add('border-border', 'text-slate-500', 'bg-transparent');
+                btn.className = inactiveClass;
             });
 
             const activeBtn = strategy === 'current' ? strategyScannerBtn : strategyVcpBtn;
-            activeBtn.classList.remove('border-border', 'text-slate-500', 'bg-transparent');
-            activeBtn.classList.add('border-accent', 'text-accent', 'bg-accent/10', 'shadow-[0_0_20px_rgba(52,211,153,0.1)]');
+            activeBtn.className = activeClass;
 
             triggerScan();
         }
@@ -688,31 +746,40 @@
             stocks.forEach((stock, index) => {
                 const rawVolume = stock.Volume || stock.volume || stock.VOL || stock.vol || 0;
                 const card = document.createElement('div');
-                card.className = 'bg-surface border border-border p-5 rounded-lg card-anim relative overflow-hidden group hover:border-accent/30';
+                card.className = 'p-5 rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/80 dark:bg-[#0b0f19]/90 shadow-md hover:border-emerald-500/80 hover:shadow-[0_8px_30px_rgba(5,150,105,0.06)] dark:hover:border-emerald-500/60 dark:hover:shadow-[0_0_25px_rgba(16,185,129,0.12)] hover:-translate-y-[1px] transition-all duration-300 card-anim relative overflow-hidden group';
                 
                 card.innerHTML = `
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <h3 class="font-black text-xl tracking-tight text-white leading-none uppercase">${stock.ticker}</h3>
-                            <div class="flex items-center gap-2 mt-1.5">
-                                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">CMP: ₹${stock.price.toLocaleString('en-IN')}</span>
-                                <span class="text-[9px] ${stock.change >= 0 ? 'signal-up' : 'signal-down'} uppercase tracking-widest ml-1">(${stock.change >= 0 ? '+' : ''}${stock.change}%)</span>
-                                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest ml-2">VOL: ${formatVolume(rawVolume)}</span>
+                            <h3 class="text-lg font-bold tracking-wide text-slate-800 dark:text-slate-100 uppercase">${stock.ticker}</h3>
+                            <div class="flex items-center gap-2 mt-1 dark:bg-slate-900/60 dark:border-slate-800 rounded px-2 py-1 w-fit">
+                                <span class="text-[10px] font-medium text-slate-500 uppercase tracking-widest bg-slate-100/50 dark:bg-transparent px-1.5 py-0.5 rounded">CMP: ₹${stock.price.toLocaleString('en-IN')}</span>
+                                <span class="text-[10px] ${stock.change >= 0 ? 'signal-up' : 'signal-down'} uppercase tracking-widest bg-slate-100/50 dark:bg-transparent px-1.5 py-0.5 rounded font-bold">(${stock.change >= 0 ? '+' : ''}${stock.change}%)</span>
                             </div>
                         </div>
-                        <div class="score-badge">
-                            <span class="text-[10px] uppercase tracking-tighter">Score: ${stock.score}</span>
+                        <div class="px-2 py-0.5 text-xs font-mono bg-slate-100 dark:bg-slate-800/50 border border-slate-200/40 dark:border-slate-700/50 rounded text-slate-600 dark:text-slate-400">
+                            SCORE: ${stock.score}
                         </div>
                     </div>
 
-                    <div class="flex justify-between items-center text-[9px] font-bold uppercase tracking-widest text-slate-500">
-                        <div class="flex gap-4">
-                            <span>${activeStrategy === 'vcp' ? 'T2 COMP' : '9 EMA'}: <span class="text-slate-300">${activeStrategy === 'vcp' ? stock.ema9 + '%' : stock.ema9}</span></span>
-                            <span>${activeStrategy === 'vcp' ? 'T3 COMP' : '20 EMA'}: <span class="text-slate-300">${activeStrategy === 'vcp' ? stock.ema20 + '%' : stock.ema20}</span></span>
+                    <div class="flex justify-between items-end border-t border-slate-100 dark:border-slate-800/80 pt-3 mt-3">
+                        <div class="grid grid-cols-3 gap-2 flex-grow">
+                            <div class="flex flex-col">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">${activeStrategy === 'vcp' ? 'T2 COMP:' : '9 EMA:'}</span>
+                                <span class="text-[13px] font-bold text-slate-700 dark:text-slate-300 mt-0.5">${activeStrategy === 'vcp' ? stock.ema9 + '%' : stock.ema9}</span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">${activeStrategy === 'vcp' ? 'T3 COMP:' : '20 EMA:'}</span>
+                                <span class="text-[13px] font-bold text-slate-700 dark:text-slate-300 mt-0.5">${activeStrategy === 'vcp' ? stock.ema20 + '%' : stock.ema20}</span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">VOL:</span>
+                                <span class="text-[13px] font-bold text-slate-700 dark:text-slate-300 mt-0.5">${formatVolume(rawVolume)}</span>
+                            </div>
                         </div>
-                        <span class="text-accent flex items-center gap-1.5">
-                            <span class="w-1 h-1 bg-accent rounded-full animate-pulse"></span>
-                            View Chart
+                        <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-300 hover:underline tracking-wide transition-colors duration-200 flex items-center gap-1.5 shrink-0">
+                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                            VIEW CHART
                         </span>
                     </div>
                 `;

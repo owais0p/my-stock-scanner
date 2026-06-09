@@ -34,7 +34,8 @@ This document provides a comprehensive breakdown of the engineering decisions, t
     - **Market Universe Selector**: Cyber-tactical dropdown for targeting specific market cap chunks.
     - **Dynamic Matrix Display**: Real-time UI label updates reflecting the active market segment.
     - **Theme System**: Premium Dark Obsidian / Slate Workstation toggle with `localStorage` persistence and high-contrast accessibility overrides.
-- **Visual Identity**:
+    - **Performance Optimization (Theme)**: Implements a targeted, hardware-accelerated `.theme-transition` class with `will-change: background-color, border-color`. Universal wildcard transitions (`*`) are explicitly removed to ensure 0ms lag even with thousands of dynamic results populated in the DOM.
+    - **Background Layering**: Optimized dual-layer background pseudo-elements (`::before` and `::after`) using opacity cross-fades for silky-smooth texture transitions.
     - **Terminology**: Swapped "Entry" for **"CMP"** (Current Market Price) for professional clarity.
     - **Volume Formatting**: Custom utility handles large values with suffixes (K, L, Cr) and provides a visual fallback (**<1K**) for sparse historical data.
     - **Typography**: 'Iceland' (Google Fonts) for branding; 'JetBrains Mono' for metrics; 'Inter' for UI.
