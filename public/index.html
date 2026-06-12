@@ -172,7 +172,8 @@
         body.light-theme #scan-status:not(.signal-up):not(.signal-down) { color: #64748b !important; }
 
         body.light-theme #strategy-scanner, 
-        body.light-theme #strategy-vcp {
+        body.light-theme #strategy-vcp,
+        body.light-theme #strategy-momentum2 {
             background-color: #ffffff !important;
             border-color: #e2e8f0 !important;
         }
@@ -186,7 +187,7 @@
         /* ---------------------------------- */
 
         /* Solid UI Overrides */
-        #strategy-scanner, #strategy-vcp {
+        #strategy-scanner, #strategy-vcp, #strategy-momentum2 {
             background-color: var(--surface-color);
         }
         #strategy-scanner.border-accent {
@@ -258,15 +259,16 @@
         }
 
         /* --- Strategy Tabs --- */
-        #strategy-scanner, #strategy-vcp {
+        #strategy-scanner, #strategy-vcp, #strategy-momentum2 {
             border: 1px solid var(--border-color);
         }
-        #strategy-scanner:hover, #strategy-vcp:hover {
+        #strategy-scanner:hover, #strategy-vcp:hover, #strategy-momentum2:hover {
             border-color: var(--accent-color);
             background-color: rgba(52, 211, 153, 0.05);
         }
         body.light-theme #strategy-scanner:hover, 
-        body.light-theme #strategy-vcp:hover {
+        body.light-theme #strategy-vcp:hover,
+        body.light-theme #strategy-momentum2:hover {
             background-color: #f8fafc; /* slate-50 */
             color: #0f172a; /* slate-900 */
             border-color: rgba(226, 232, 240, 0.8); /* slate-200/80 */
@@ -443,13 +445,13 @@
             }
 
             /* Action Tabs Flex */
-            .mb-6.grid.grid-cols-2 {
+            .mb-6.grid.grid-cols-3 {
                 display: grid;
-                grid-template-columns: 1fr 1fr;
+                grid-template-columns: 1fr 1fr 1fr;
                 gap: 8px;
             }
             
-            #strategy-scanner, #strategy-vcp {
+            #strategy-scanner, #strategy-vcp, #strategy-momentum2 {
                 padding-top: 1rem;
                 padding-bottom: 1rem;
                 font-size: 8px;
@@ -503,12 +505,15 @@
         </div>
 
         <!-- Strategy Switcher -->
-        <div class="mb-6 grid grid-cols-2 gap-4 theme-transition">
+        <div class="mb-6 grid grid-cols-3 gap-4 theme-transition">
             <button id="strategy-scanner" class="bg-emerald-50/40 text-emerald-700 border-2 border-emerald-500 font-bold shadow-[0_2px_10px_rgba(5,150,105,0.06)] py-4 rounded text-[10px] tracking-[0.2em] transition-all duration-300 ease-out active:scale-[0.99] hover:transform-none uppercase dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-500/80 dark:shadow-[0_0_15px_rgba(16,185,129,0.15)]">
                 MOMENTUM VELOCITY
             </button>
             <button id="strategy-vcp" class="bg-white hover:bg-emerald-50/30 text-slate-600 hover:text-emerald-600 border border-slate-200/80 hover:border-emerald-300/80 shadow-sm hover:shadow-[0_8px_20px_-4px_rgba(5,150,105,0.12)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase dark:bg-[#0d131f]/60 dark:text-slate-400 dark:border-slate-800/80 dark:hover:bg-[#111827] dark:hover:text-emerald-400 dark:hover:border-emerald-500/40 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.08)]">
                 VCP Matrix
+            </button>
+            <button id="strategy-momentum2" class="bg-white hover:bg-emerald-50/30 text-slate-600 hover:text-emerald-600 border border-slate-200/80 hover:border-emerald-300/80 shadow-sm hover:shadow-[0_8px_20px_-4px_rgba(5,150,105,0.12)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase dark:bg-[#0d131f]/60 dark:text-slate-400 dark:border-slate-800/80 dark:hover:bg-[#111827] dark:hover:text-emerald-400 dark:hover:border-emerald-500/40 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.08)]">
+                MOMENTUM 2
             </button>
         </div>
 
@@ -612,6 +617,7 @@
         // Strategy Switcher & Universe Refs
         const strategyScannerBtn = document.getElementById('strategy-scanner');
         const strategyVcpBtn = document.getElementById('strategy-vcp');
+        const strategyMomentum2Btn = document.getElementById('strategy-momentum2');
         const universeSelector = document.getElementById('universe-selector');
         const matrixEngineDisplay = document.getElementById('matrix-engine-display');
         const tickerSearch = document.getElementById('ticker-search');
@@ -722,11 +728,18 @@
             const inactiveClass = 'bg-white hover:bg-gradient-to-tr hover:from-white hover:to-emerald-50/30 text-slate-600 hover:text-emerald-600 border border-slate-200/80 hover:border-emerald-300/80 shadow-sm hover:shadow-[0_8px_20px_-4px_rgba(5,150,105,0.12)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase dark:bg-[#0d131f]/60 dark:text-slate-400 dark:border-slate-800/80 dark:hover:bg-[#111827] dark:hover:text-emerald-400 dark:hover:border-emerald-500/30 dark:hover:shadow-[0_4px_20px_rgba(16,185,129,0.08)] dark:hover:-translate-y-[2px]';
             const activeClass = 'bg-emerald-50/40 text-emerald-700 border-2 border-emerald-500 font-bold shadow-[0_2px_10px_rgba(5,150,105,0.06)] py-4 rounded text-[10px] tracking-[0.2em] transition-all duration-300 ease-out active:scale-[0.99] hover:transform-none uppercase dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-500/80 dark:shadow-[0_0_15px_rgba(16,185,129,0.15)] font-bold';
 
-            [strategyScannerBtn, strategyVcpBtn].forEach(btn => {
+            [strategyScannerBtn, strategyVcpBtn, strategyMomentum2Btn].forEach(btn => {
                 btn.className = inactiveClass;
             });
 
-            const activeBtn = strategy === 'current' ? strategyScannerBtn : strategyVcpBtn;
+            let activeBtn;
+            if (strategy === 'current') {
+                activeBtn = strategyScannerBtn;
+            } else if (strategy === 'vcp') {
+                activeBtn = strategyVcpBtn;
+            } else if (strategy === 'momentum_2') {
+                activeBtn = strategyMomentum2Btn;
+            }
             activeBtn.className = activeClass;
 
             triggerScan();
@@ -826,6 +839,7 @@
         exportBtn.addEventListener('click', exportToCSV);
         strategyScannerBtn.addEventListener('click', () => updateStrategy('current'));
         strategyVcpBtn.addEventListener('click', () => updateStrategy('vcp'));
+        strategyMomentum2Btn.addEventListener('click', () => updateStrategy('momentum_2'));
         universeSelector.addEventListener('change', () => triggerScan());
     </script>
     <script>

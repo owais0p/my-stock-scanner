@@ -65,7 +65,7 @@ def get_nse_universe(universe_mode: str):
 
 @app.get("/api/scan")
 async def run_scan(
-    strategy: str = Query("current", description="Strategy: current or vcp"),
+    strategy: str = Query("current", description="Strategy: current, vcp, or momentum_2"),
     universe: str = Query("chunk1", description="Target Matrix Chunk: chunk1-chunk5")
 ):
     # 1. DATA UPLINK & UNIVERSE TARGETING
@@ -187,6 +187,64 @@ async def run_scan(
                             "score": vcp_score,
                             "setup": f"VCP Tightening ({compression_ratio}%)"
                         }
+
+            # ====================================================
+            # 🚀 MOMENTUM 2 ENGINE (TIGHT CONSOLIDATION & DRY VOL)
+            # ====================================================
+            elif strategy == "momentum_2":
+                # Condition 1: 15% Above Monthly Low
+                monthly_low = df["Low"].iloc[-20:].min()
+                if last_close >= (monthly_low * 1.15):
+                    # Condition 2: Tight Consolidation above EMAs
+                    ema9 = close.ewm(span=9, adjust=False).mean()
+                    ema20 = close.ewm(span=20, adjust=False).mean()
+                    
+                    lows_above_emas = True
+                    for idx in [-1, -2, -3]:
+                        if not (df["Low"].iloc[idx] >= ema9.iloc[idx] and df["Low"].iloc[idx] >= ema20.iloc[idx]):
+                            lows_above_emas = False
+                            break
+                    
+                    if lows_above_emas:
+                        high_3d = df["High"].iloc[-3:].max()
+                        low_3d = df["Low"].iloc[-3:].min()
+                        mean_close_3d = df["Close"].iloc[-3:].mean()
+                        spread_pct = ((high_3d - low_3d) / mean_close_3d) * 100
+                        
+                        # Spread must be compressed (e.g. <= 7.0%)
+                        if spread_pct <= 7.0:
+                            # Condition 3: Dry Volume (Avg last 3 days volume < 85% of 20-day avg volume)
+                            current_vol_3d_avg = volume.iloc[-3:].mean()
+                            volume_20d_avg = volume.iloc[-20:].mean()
+                            
+                            if current_vol_3d_avg < volume_20d_avg * 0.85:
+                                # Robust Volume Fallback (Safe for late-night data gaps)
+                                try:
+                                    val = next((int(v) for v in reversed(volume.dropna().values) if v > 0), 0)
+                                except Exception:
+                                    val = 0
+                                
+                                if not val:
+                                    try:
+                                        v_hist = yf.Ticker(ticker).history(period="5d")["Volume"].dropna()
+                                        val = next((int(v) for v in reversed(v_hist.values) if v > 0), 0)
+                                    except Exception:
+                                        val = 0
+
+                                vol_ratio = (current_vol_3d_avg / volume_20d_avg)
+                                breakout_score = round(100 - (spread_pct / 7.0) * 50 - (vol_ratio / 0.85) * 50, 2)
+                                
+                                match_found = True
+                                metadata = {
+                                    "ticker": ticker.replace(".NS", ""),
+                                    "price": round(last_close, 2),
+                                    "change": change,
+                                    "Volume": val,
+                                    "ema9": round(ema9.iloc[-1], 2),
+                                    "ema20": round(ema20.iloc[-1], 2),
+                                    "score": breakout_score,
+                                    "setup": f"Momentum 2 (Spread: {spread_pct:.2f}%)"
+                                }
 
             if match_found:
                 results.append(metadata)
