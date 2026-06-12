@@ -65,14 +65,17 @@ def get_nse_universe(universe_mode: str):
 
 @app.get("/api/scan")
 async def run_scan(
-    strategy: str = Query("current", description="Strategy: current, vcp, or momentum_2"),
+    strategy: str = Query("current", description="Strategy: current, vcp, momentum_2, or vcp_2"),
     universe: str = Query("chunk1", description="Target Matrix Chunk: chunk1-chunk5")
 ):
     # 1. DATA UPLINK & UNIVERSE TARGETING
     tickers = get_nse_universe(universe)
     
+    # Force 1y period for vcp_2 to enable 200 EMA calculation, keep 4mo for other strategies
+    period_days = "1y" if strategy == "vcp_2" else "4mo"
+    
     # Batch download optimization (High-speed multi-threading enabled)
-    data = yf.download(tickers, period="4mo", group_by="ticker", threads=True, progress=False)
+    data = yf.download(tickers, period=period_days, group_by="ticker", threads=True, progress=False)
     
     results = []
     
@@ -244,6 +247,60 @@ async def run_scan(
                                     "ema20": round(ema20.iloc[-1], 2),
                                     "score": breakout_score,
                                     "setup": f"Momentum 2 (Spread: {spread_pct:.2f}%)"
+                                }
+
+            # ====================================================
+            # 📈 VCP 2.0 ENGINE (TREND, TIGHTNESS & VOLUME DRYUP)
+            # ====================================================
+            elif strategy == "vcp_2":
+                if len(df) < 200: continue
+                
+                ema50 = close.ewm(span=50, adjust=False).mean()
+                ema200 = close.ewm(span=200, adjust=False).mean()
+                
+                l_ema50 = ema50.iloc[-1]
+                l_ema200 = ema200.iloc[-1]
+                
+                # Trend filter: Close > 50 EMA AND 50 EMA > 200 EMA
+                if last_close > l_ema50 and l_ema50 > l_ema200:
+                    high_5d = df["High"].iloc[-5:].max()
+                    low_5d = df["Low"].iloc[-5:].min()
+                    mean_close_5d = df["Close"].iloc[-5:].mean()
+                    
+                    if mean_close_5d > 0:
+                        squeeze_range = ((high_5d - low_5d) / mean_close_5d) * 100
+                        
+                        # Squeeze tightness must be <= 6.0%
+                        if squeeze_range <= 6.0:
+                            # Volume Contraction: Avg vol of last 3 days < 75% of rolling 20-day avg volume
+                            avg_vol_3d = volume.iloc[-3:].mean()
+                            
+                            if avg_vol_3d < avg_vol_20d * 0.75:
+                                # Robust Volume Fallback (Safe for late-night data gaps)
+                                try:
+                                    val = next((int(v) for v in reversed(volume.dropna().values) if v > 0), 0)
+                                except Exception:
+                                    val = 0
+                                
+                                if not val:
+                                    try:
+                                        v_hist = yf.Ticker(ticker).history(period="5d")["Volume"].dropna()
+                                        val = next((int(v) for v in reversed(v_hist.values) if v > 0), 0)
+                                    except Exception:
+                                        val = 0
+                                        
+                                breakout_score = round(100 - (squeeze_range / 6.0) * 50, 2)
+                                
+                                match_found = True
+                                metadata = {
+                                    "ticker": ticker.replace(".NS", ""),
+                                    "price": round(last_close, 2),
+                                    "change": change,
+                                    "Volume": val,
+                                    "ema9": round(squeeze_range, 2), # 5-day Squeeze Range
+                                    "ema20": round(l_ema50, 2), # 50 EMA
+                                    "score": breakout_score,
+                                    "setup": f"VCP 2.0 (5D: {squeeze_range:.2f}%)"
                                 }
 
             if match_found:
