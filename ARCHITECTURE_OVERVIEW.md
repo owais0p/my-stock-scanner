@@ -14,12 +14,12 @@ This document provides a comprehensive breakdown of the engineering decisions, t
     - **Chunk 1 & 2 (Premium)**: Derived from the **Nifty 500** list. Segmented into two 250-symbol blocks for high-liquidity institutional focus.
     - **Chunk 3, 4 & 5 (Alpha Pools)**: Derived from the broader NSE equity market (excluding Nifty 500). Split evenly into three segments to surface under-the-radar micro-cap and nano-cap opportunities.
 - **Logic Parameters**:
-    - `strategy`: Supports `current` (MOMENTUM VELOCITY), `vcp` (VCP MATRIX), `momentum_2` (MOMENTUM 2), and `vcp_2` (VCP 2.0).
+    - `strategy`: Supports `current` (MOMENTUM VELOCITY), `vcp` (VCP MATRIX), `momentum_2` (MOMENTUM 2), and `vcp_2` (MOMENTUM VELOCITY 2.0).
     - `universe`: Targets specific market slices from `chunk1` to `chunk5`.
 - **Performance Optimizations**:
     - **Fast Price Lookup**: Implements `fast_info` metadata retrieval with a strict **0.5s thread-based timeout** to eliminate network-loop lag.
     - **Historical Volume Fallback**: Intelligent lookback logic that scans for the last non-zero trading session's volume, ensuring data consistency during off-market hours.
-    - **Dynamic Period Allocation**: Automatically forces `period="1y"` for `vcp_2` (enabling 200 EMA calculations) while keeping it to `4mo` for other strategies to prevent hitting API rate limits.
+    - **Uniform Batch Loading**: Standardized all engines to use the high-efficiency `4mo` historical data baseline to maximize execution speed and ensure glitch-free pipeline results.
 - **Institutional Guardrails**:
     - **Price Floor**: Strict `if last_close < 50` rule to eliminate high-risk penny stocks.
     - **Liquidity Barrier**: Enforces a minimum **100k average daily volume** (20-day baseline) to ensure tradeability.
@@ -27,7 +27,7 @@ This document provides a comprehensive breakdown of the engineering decisions, t
     - **Momentum Velocity**: Scores based on 9/20 EMA support and proximity to recent highs.
     - **VCP Matrix**: Implements Mark Minervini's Volatility Contraction Pattern. Tracks structural tightening across three blocks (T1 > T2 > T3) with supply-absorption volume verification.
     - **Momentum 2**: Enforces tight consolidations above 9 & 20 EMA (3-day spread <= 7.0%) combined with volume dryup (< 85% of 20-day average).
-    - **VCP 2.0**: Modernized Minervini compression strategy validating long-term uptrend (Close > 50 EMA > 200 EMA), tight cumulative 5-day high-to-low range (<= 6.0%), and clear volume contraction (3-day average < 75% of 20-day average).
+    - **Momentum Velocity 2.0 (vcp_2)**: A wide-funnel ruleset enforcing short-term trend (Close strictly above daily 9 and 20 EMA) and relaxed squeeze limit (5-day high-to-low spread <= 15.0%) with all volume contraction filters deactivated.
 
 ## 3. Frontend Design (Institutional Terminal UI)
 - **Architecture**: Single-Page Application (SPA) using Vanilla JavaScript and Tailwind CSS.
