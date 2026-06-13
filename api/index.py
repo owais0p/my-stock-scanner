@@ -65,7 +65,7 @@ def get_nse_universe(universe_mode: str):
 
 @app.get("/api/scan")
 async def run_scan(
-    strategy: str = Query("current", description="Strategy: current, vcp, momentum_2, or vcp_2"),
+    strategy: str = Query("current", description="Strategy: current, momentum_open_30, vcp, momentum_2, or vcp_2"),
     universe: str = Query("chunk1", description="Target Matrix Chunk: chunk1-chunk5")
 ):
     # 1. DATA UPLINK & UNIVERSE TARGETING
@@ -100,12 +100,9 @@ async def run_scan(
             prev_close = close.iloc[-2]
             change = round(((last_close - prev_close) / prev_close) * 100, 2)
             
-            # Anti-trash penny floor & Volume safety barrier
-            if last_close < 50: 
-                continue 
-            
-            avg_vol_20d = volume.iloc[-20:].mean()
-            if avg_vol_20d < 100000: 
+            # Anti-trash penny floor & Volume safety barrier for global loops
+            # Keep at 30 dynamically to allow the new open scanner to execute past the gate
+            if last_close < 30: 
                 continue 
             
             match_found = False
@@ -124,6 +121,14 @@ async def run_scan(
             # 📈 CURRENT BREAKOUT ENGINE (9/20 EMA MOMENTUM)
             # ====================================================
             if strategy == "current":
+                # Original Baseline Strategy Guards (As-Is Safe! No changes here)
+                if last_close < 50: 
+                    continue 
+                
+                avg_vol_20d = volume.iloc[-20:].mean()
+                if avg_vol_20d < 100000: 
+                    continue 
+
                 ema9 = close.ewm(span=9, adjust=False).mean()
                 ema20 = close.ewm(span=20, adjust=False).mean()
                 
@@ -145,11 +150,44 @@ async def run_scan(
                         "score": score,
                         "setup": "Momentum Breakout" if last_close > close.iloc[-20:].max() * 0.98 else "EMA Support"
                     }
+
+            # ====================================================
+            # 🚀 RAYYAN OVERRIDE: OPEN MOMENTUM 2.0 (NEW ALAG BUTTON)
+            # ====================================================
+            elif strategy == "momentum_open_30":
+                # Condition 1: Relaxed Floor Room (Down to ₹30)
+                # Condition 2: No 1 Lakh Average Volume Constraint! (Completely Free Loop)
+                ema9 = close.ewm(span=9, adjust=False).mean()
+                ema20 = close.ewm(span=20, adjust=False).mean()
+                
+                l_ema9 = ema9.iloc[-1]
+                l_ema20 = ema20.iloc[-1]
+                
+                if last_close > l_ema9 and last_close > l_ema20:
+                    pct_diff = ((last_close - l_ema20) / l_ema20) * 100
+                    score = round(100 - pct_diff, 2)
+
+                    match_found = True
+                    metadata = {
+                        "ticker": ticker.replace(".NS", ""),
+                        "price": round(last_close, 2),
+                        "change": change,
+                        "Volume": val,
+                        "ema9": round(l_ema9, 2),
+                        "ema20": round(l_ema20, 2),
+                        "score": score,
+                        "setup": "Open Breakout (Floor ₹30)"
+                    }
             
             # ====================================================
             # ⚡ VCP MATRIX ENGINE (MARK MINERVINI COMPRESSION)
             # ====================================================
             elif strategy == "vcp":
+                # Keep original constraints intact
+                if last_close < 50: continue
+                avg_vol_20d = volume.iloc[-20:].mean()
+                if avg_vol_20d < 100000: continue
+
                 sma20 = close.rolling(window=20).mean()
                 if last_close < sma20.iloc[-1]: 
                     continue
@@ -179,6 +217,10 @@ async def run_scan(
             # 🚀 MOMENTUM 2 ENGINE (TIGHT CONSOLIDATION & DRY VOL)
             # ====================================================
             elif strategy == "momentum_2":
+                if last_close < 50: continue
+                avg_vol_20d = volume.iloc[-20:].mean()
+                if avg_vol_20d < 100000: continue
+
                 monthly_low = df["Low"].iloc[-20:].min()
                 if last_close >= (monthly_low * 1.15):
                     ema9 = close.ewm(span=9, adjust=False).mean()
@@ -220,13 +262,10 @@ async def run_scan(
             # 📈 MOMENTUM VELOCITY 2.0 (THE ULTIMATE ENGINE)
             # ====================================================
             elif strategy == "vcp_2":
-                if len(df) < 30: continue
-                
-                # Condition 1: Monthly Pullback Guard (15% Above 20-Day Low)
+                # Standalone tracking loop bypasses top level guards
                 monthly_low = df["Low"].iloc[-20:].min()
                 if last_close >= (monthly_low * 1.15):
                     
-                    # Condition 2: Short-Term Trend (CMP > Daily 9 EMA & 20 EMA)
                     ema9 = close.ewm(span=9, adjust=False).mean()
                     ema20 = close.ewm(span=20, adjust=False).mean()
                     
@@ -234,7 +273,6 @@ async def run_scan(
                     l_ema20 = ema20.iloc[-1]
                     
                     if last_close > l_ema9 and last_close > l_ema20:
-                        # Condition 3: Relaxed 5-Day Squeeze Range (<= 15.0%)
                         high_5d = df["High"].iloc[-5:].max()
                         low_5d = df["Low"].iloc[-5:].min()
                         mean_close_5d = df["Close"].iloc[-5:].mean()
@@ -243,11 +281,9 @@ async def run_scan(
                             squeeze_range = round(((high_5d - low_5d) / mean_close_5d) * 100, 2)
                             
                             if squeeze_range <= 15.0:
-                                # Strategic fallback for short historical depth 50 EMA
                                 ema50 = close.ewm(span=50, adjust=False).mean()
                                 l_ema50 = ema50.iloc[-1] if not np.isnan(ema50.iloc[-1]) else l_ema20
                                 
-                                # Balance score scaling
                                 breakout_score = round(100 - (squeeze_range / 15.0) * 50, 2)
                                         
                                 match_found = True
@@ -256,8 +292,8 @@ async def run_scan(
                                     "price": round(last_close, 2),
                                     "change": change,
                                     "Volume": val,
-                                    "ema9": squeeze_range, # 5D Squeeze mapped to frontend EMA9 slot
-                                    "ema20": round(l_ema50, 2), # 50 EMA mapped to frontend EMA20 slot
+                                    "ema9": squeeze_range, 
+                                    "ema20": round(l_ema50, 2), 
                                     "score": breakout_score,
                                     "setup": f"MV 2.0 (5D: {squeeze_range:.2f}%)"
                                 }

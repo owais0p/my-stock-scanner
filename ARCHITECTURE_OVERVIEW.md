@@ -42,6 +42,9 @@ This document provides a comprehensive breakdown of the engineering decisions, t
     - **Terminology**: Swapped "Entry" for **"CMP"** (Current Market Price) for professional clarity.
     - **Volume Formatting**: Custom utility handles large values with suffixes (K, L, Cr) and provides a visual fallback (**<1K**) for sparse historical data.
     - **Typography**: 'Iceland' (Google Fonts) for branding; 'JetBrains Mono' for metrics; 'Inter' for UI.
+    - **Branding Assets**:
+        - **Official Logo**: High-fidelity custom SVG featuring a breakout-themed 'A' with Emerald-400 accents.
+        - **Deployment**: Integrated via Base64 Data URIs in the header, hero section, and browser favicon to ensure zero-latency loading and cross-environment reliability.
     - **Background Layering**: 3x dense technical textures (Cyber-Grid for Dark, Dot-Matrix for Light) isolated on a fixed pseudo-element to prevent overlapping with content.
     - **Tactile Interactions**: Cubic-bezier transitions, hover-lift effects, and mechanical click feedback on all buttons and cards.
 - **UX Features**:

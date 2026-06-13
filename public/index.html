@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AAPNATRADER | Terminal Deck</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPCEtLSBBQVBOQVRRQURFUiBPZmZpY2lhbCBMb2dvIC0tPgogIDxwYXRoIGQ9Ik01MCAyMEwyMCA4MEgzMkw1MCA0NEw2OCA4MEg4MEw1MCAyMFoiIGZpbGw9IndoaXRlIi8+CiAgPHBhdGggZD0iTTQyIDYwSDU4TDY1IDc1SDM1TDQyIDYwWiIgZmlsbD0iIzEwQjk4MSIvPgogIDxwYXRoIGQ9Ik03NSAyNUw4NSAxNU04NSAxNUg3N004NSAxNVYyMyIgc3Ryb2tlPSIjMTBCOTgxIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4=">
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -174,7 +175,8 @@
         body.light-theme #strategy-scanner, 
         body.light-theme #strategy-vcp,
         body.light-theme #strategy-momentum2,
-        body.light-theme #strategy-vcp2 {
+        body.light-theme #strategy-vcp2,
+        body.light-theme #strategy-momentum-open {
             background-color: #ffffff !important;
             border-color: #e2e8f0 !important;
         }
@@ -188,7 +190,7 @@
         /* ---------------------------------- */
 
         /* Solid UI Overrides */
-        #strategy-scanner, #strategy-vcp, #strategy-momentum2, #strategy-vcp2 {
+        #strategy-scanner, #strategy-vcp, #strategy-momentum2, #strategy-vcp2, #strategy-momentum-open {
             background-color: var(--surface-color);
         }
         #strategy-scanner.border-accent {
@@ -260,17 +262,18 @@
         }
 
         /* --- Strategy Tabs --- */
-        #strategy-scanner, #strategy-vcp, #strategy-momentum2, #strategy-vcp2 {
+        #strategy-scanner, #strategy-vcp, #strategy-momentum2, #strategy-vcp2, #strategy-momentum-open {
             border: 1px solid var(--border-color);
         }
-        #strategy-scanner:hover, #strategy-vcp:hover, #strategy-momentum2:hover, #strategy-vcp2:hover {
+        #strategy-scanner:hover, #strategy-vcp:hover, #strategy-momentum2:hover, #strategy-vcp2:hover, #strategy-momentum-open:hover {
             border-color: var(--accent-color);
             background-color: rgba(52, 211, 153, 0.05);
         }
         body.light-theme #strategy-scanner:hover, 
         body.light-theme #strategy-vcp:hover,
         body.light-theme #strategy-momentum2:hover,
-        body.light-theme #strategy-vcp2:hover {
+        body.light-theme #strategy-vcp2:hover,
+        body.light-theme #strategy-momentum-open:hover {
             background-color: #f8fafc; /* slate-50 */
             color: #0f172a; /* slate-900 */
             border-color: rgba(226, 232, 240, 0.8); /* slate-200/80 */
@@ -447,13 +450,13 @@
             }
 
             /* Action Tabs Flex */
-            .mb-6.grid.grid-cols-4 {
+            .mb-6.grid.grid-cols-5 {
                 display: grid;
-                grid-template-columns: 1fr 1fr 1fr 1fr;
+                grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
                 gap: 8px;
             }
             
-            #strategy-scanner, #strategy-vcp, #strategy-momentum2, #strategy-vcp2 {
+            #strategy-scanner, #strategy-vcp, #strategy-momentum2, #strategy-vcp2, #strategy-momentum-open {
                 padding-top: 1rem;
                 padding-bottom: 1rem;
                 font-size: 8px;
@@ -467,7 +470,8 @@
     <!-- Header -->
     <header class="fixed top-0 left-0 right-0 h-16 bg-background border-b border-border z-50 flex items-center theme-transition">
         <div class="max-w-6xl mx-auto w-full flex items-center justify-between px-4">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-3">
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPCEtLSBBQVBOQVRRQURFUiBPZmZpY2lhbCBMb2dvIC0tPgogIDxwYXRoIGQ9Ik01MCAyMEwyMCA4MEgzMkw1MCA0NEw2OCA4MEg4MEw1MCAyMFoiIGZpbGw9IndoaXRlIi8+CiAgPHBhdGggZD0iTTQyIDYwSDU4TDY1IDc1SDM1TDQyIDYwWiIgZmlsbD0iIzEwQjk4MSIvPgogIDxwYXRoIGQ9Ik03NSAyNUw4NSAxNU04NSAxNUg3N004NSAxNVYyMyIgc3Ryb2tlPSIjMTBCOTgxIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4=" alt="Logo" class="h-8 w-8">
                 <span class="text-2xl brand-text">
                     <span class="text-slate-100">AAPNA</span><span class="text-emerald-400 brand-glow">TRADER</span>
                 </span>
@@ -494,6 +498,7 @@
         <!-- Hero Section (Tactical Pod) -->
         <div class="mb-12 p-8 rounded-3xl border border-[#10b98122] bg-slate-950/60 backdrop-blur-xl max-w-[500px] mx-auto text-center relative overflow-hidden shadow-2xl tactical-card">
             <div class="relative z-10 flex flex-col items-center">
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPCEtLSBBQVBOQVRRQURFUiBPZmZpY2lhbCBMb2dvIC0tPgogIDxwYXRoIGQ9Ik01MCAyMEwyMCA4MEgzMkw1MCA0NEw2OCA4MEg4MEw1MCAyMFoiIGZpbGw9IndoaXRlIi8+CiAgPHBhdGggZD0iTTQyIDYwSDU4TDY1IDc1SDM1TDQyIDYwWiIgZmlsbD0iIzEwQjk4MSIvPgogIDxwYXRoIGQ9Ik03NSAyNUw4NSAxNU04NSAxNUg3N004NSAxNVYyMyIgc3Ryb2tlPSIjMTBCOTgxIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4=" alt="AAPNATRADER Logo" class="h-20 w-20 mb-6 drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">
                 <h1 class="text-[2.5rem] mb-4 brand-text leading-none">
                     <span class="text-slate-100 drop-shadow-[0_0_10px_rgba(255,255,255,0.05)]">AAPNA</span><span class="text-emerald-400 brand-glow">TRADER</span>
                 </h1>
@@ -507,7 +512,7 @@
         </div>
 
         <!-- Strategy Switcher -->
-        <div class="mb-6 grid grid-cols-4 gap-4 theme-transition">
+        <div class="mb-6 grid grid-cols-5 gap-4 theme-transition">
             <button id="strategy-scanner" class="bg-emerald-50/40 text-emerald-700 border-2 border-emerald-500 font-bold shadow-[0_2px_10px_rgba(5,150,105,0.06)] py-4 rounded text-[10px] tracking-[0.2em] transition-all duration-300 ease-out active:scale-[0.99] hover:transform-none uppercase dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-500/80 dark:shadow-[0_0_15px_rgba(16,185,129,0.15)]">
                 MOMENTUM VELOCITY
             </button>
@@ -519,6 +524,9 @@
             </button>
             <button id="strategy-vcp2" class="bg-white hover:bg-emerald-50/30 text-slate-600 hover:text-emerald-600 border border-slate-200/80 hover:border-emerald-300/80 shadow-sm hover:shadow-[0_8px_20px_-4px_rgba(5,150,105,0.12)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase dark:bg-[#0d131f]/60 dark:text-slate-400 dark:border-slate-800/80 dark:hover:bg-[#111827] dark:hover:text-emerald-400 dark:hover:border-emerald-500/40 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.08)]">
                 MOMENTUM VELOCITY 2.0
+            </button>
+            <button id="strategy-momentum-open" data-strategy="momentum_open_30" class="bg-white hover:bg-emerald-50/30 text-slate-600 hover:text-emerald-600 border border-slate-200/80 hover:border-emerald-300/80 shadow-sm hover:shadow-[0_8px_20px_-4px_rgba(5,150,105,0.12)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase dark:bg-[#0d131f]/60 dark:text-slate-400 dark:border-slate-800/80 dark:hover:bg-[#111827] dark:hover:text-emerald-400 dark:hover:border-emerald-500/40 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.08)]">
+                MOMENTUM OPEN 2.0
             </button>
         </div>
 
@@ -624,6 +632,7 @@
         const strategyVcpBtn = document.getElementById('strategy-vcp');
         const strategyMomentum2Btn = document.getElementById('strategy-momentum2');
         const strategyVcp2Btn = document.getElementById('strategy-vcp2');
+        const strategyMomentumOpenBtn = document.getElementById('strategy-momentum-open');
         const universeSelector = document.getElementById('universe-selector');
         const matrixEngineDisplay = document.getElementById('matrix-engine-display');
         const tickerSearch = document.getElementById('ticker-search');
@@ -695,6 +704,8 @@
             let strategyLabel = activeStrategy.toUpperCase();
             if (activeStrategy === 'vcp_2') {
                 strategyLabel = 'MOMENTUM VELOCITY 2.0';
+            } else if (activeStrategy === 'momentum_open_30') {
+                strategyLabel = 'MOMENTUM OPEN 2.0';
             }
             btnText.textContent = `Analyzing ${strategyLabel} Universe...`;
             loadingSpinner.classList.remove('hidden');
@@ -738,7 +749,7 @@
             const inactiveClass = 'bg-white hover:bg-gradient-to-tr hover:from-white hover:to-emerald-50/30 text-slate-600 hover:text-emerald-600 border border-slate-200/80 hover:border-emerald-300/80 shadow-sm hover:shadow-[0_8px_20px_-4px_rgba(5,150,105,0.12)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase dark:bg-[#0d131f]/60 dark:text-slate-400 dark:border-slate-800/80 dark:hover:bg-[#111827] dark:hover:text-emerald-400 dark:hover:border-emerald-500/30 dark:hover:shadow-[0_4px_20px_rgba(16,185,129,0.08)] dark:hover:-translate-y-[2px]';
             const activeClass = 'bg-emerald-50/40 text-emerald-700 border-2 border-emerald-500 font-bold shadow-[0_2px_10px_rgba(5,150,105,0.06)] py-4 rounded text-[10px] tracking-[0.2em] transition-all duration-300 ease-out active:scale-[0.99] hover:transform-none uppercase dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-500/80 dark:shadow-[0_0_15px_rgba(16,185,129,0.15)] font-bold';
 
-            [strategyScannerBtn, strategyVcpBtn, strategyMomentum2Btn, strategyVcp2Btn].forEach(btn => {
+            [strategyScannerBtn, strategyVcpBtn, strategyMomentum2Btn, strategyVcp2Btn, strategyMomentumOpenBtn].forEach(btn => {
                 btn.className = inactiveClass;
             });
 
@@ -751,6 +762,8 @@
                 activeBtn = strategyMomentum2Btn;
             } else if (strategy === 'vcp_2') {
                 activeBtn = strategyVcp2Btn;
+            } else if (strategy === 'momentum_open_30') {
+                activeBtn = strategyMomentumOpenBtn;
             }
             activeBtn.className = activeClass;
 
@@ -881,6 +894,7 @@
         strategyVcpBtn.addEventListener('click', () => updateStrategy('vcp'));
         strategyMomentum2Btn.addEventListener('click', () => updateStrategy('momentum_2'));
         strategyVcp2Btn.addEventListener('click', () => updateStrategy('vcp_2'));
+        strategyMomentumOpenBtn.addEventListener('click', () => updateStrategy('momentum_open_30'));
         universeSelector.addEventListener('change', () => triggerScan());
     </script>
     <script>
