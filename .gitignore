@@ -1,7 +1,8 @@
-GEMINI.md
+*.md
 .next
 node_modules
 *.csv
 *.json
 __pycache__
 .env
+public/logo.svg
