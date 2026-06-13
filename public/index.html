@@ -471,7 +471,13 @@
     <header class="fixed top-0 left-0 right-0 h-16 bg-background border-b border-border z-50 flex items-center theme-transition">
         <div class="max-w-6xl mx-auto w-full flex items-center justify-between px-4">
             <div class="flex items-center gap-3">
-                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPCEtLSBBQVBOQVRRQURFUiBPZmZpY2lhbCBMb2dvIC0tPgogIDxwYXRoIGQ9Ik01MCAyMEwyMCA4MEgzMkw1MCA0NEw2OCA4MEg4MEw1MCAyMFoiIGZpbGw9IndoaXRlIi8+CiAgPHBhdGggZD0iTTQyIDYwSDU4TDY1IDc1SDM1TDQyIDYwWiIgZmlsbD0iIzEwQjk4MSIvPgogIDxwYXRoIGQ9Ik03NSAyNUw4NSAxNU04NSAxNUg3N004NSAxNVYyMyIgc3Ryb2tlPSIjMTBCOTgxIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4=" alt="Logo" class="h-8 w-8">
+                <div class="h-8 w-8 text-slate-100 flex items-center justify-center">
+                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-full w-full">
+                        <path d="M50 20L20 80H32L50 44L68 80H80L50 20Z" fill="currentColor"/>
+                        <path d="M42 60H58L65 75H35L42 60Z" fill="#10B981"/>
+                        <path d="M75 25L85 15M85 15H77M85 15V23" stroke="#10B981" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
                 <span class="text-2xl brand-text">
                     <span class="text-slate-100">AAPNA</span><span class="text-emerald-400 brand-glow">TRADER</span>
                 </span>
@@ -498,7 +504,13 @@
         <!-- Hero Section (Tactical Pod) -->
         <div class="mb-12 p-8 rounded-3xl border border-[#10b98122] bg-slate-950/60 backdrop-blur-xl max-w-[500px] mx-auto text-center relative overflow-hidden shadow-2xl tactical-card">
             <div class="relative z-10 flex flex-col items-center">
-                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgPCEtLSBBQVBOQVRRQURFUiBPZmZpY2lhbCBMb2dvIC0tPgogIDxwYXRoIGQ9Ik01MCAyMEwyMCA4MEgzMkw1MCA0NEw2OCA4MEg4MEw1MCAyMFoiIGZpbGw9IndoaXRlIi8+CiAgPHBhdGggZD0iTTQyIDYwSDU4TDY1IDc1SDM1TDQyIDYwWiIgZmlsbD0iIzEwQjk4MSIvPgogIDxwYXRoIGQ9Ik03NSAyNUw4NSAxNU04NSAxNUg3N004NSAxNVYyMyIgc3Ryb2tlPSIjMTBCOTgxIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4=" alt="AAPNATRADER Logo" class="h-20 w-20 mb-6 drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                <div class="h-20 w-20 mb-6 text-slate-100 drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-full w-full">
+                        <path d="M50 20L20 80H32L50 44L68 80H80L50 20Z" fill="currentColor"/>
+                        <path d="M42 60H58L65 75H35L42 60Z" fill="#10B981"/>
+                        <path d="M75 25L85 15M85 15H77M85 15V23" stroke="#10B981" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
                 <h1 class="text-[2.5rem] mb-4 brand-text leading-none">
                     <span class="text-slate-100 drop-shadow-[0_0_10px_rgba(255,255,255,0.05)]">AAPNA</span><span class="text-emerald-400 brand-glow">TRADER</span>
                 </h1>
@@ -666,6 +678,19 @@
         });
 
         // --- Theme Logic ---
+        function updateFavicon(isLight) {
+            const favicon = document.querySelector('link[rel="icon"]');
+            if (!favicon) return;
+            // Use hex colors for SVG, escaping the # as %23
+            const color = isLight ? '%230f172a' : 'white';
+            const svg = `<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M50 20L20 80H32L50 44L68 80H80L50 20Z" fill="${color}"/>
+  <path d="M42 60H58L65 75H35L42 60Z" fill="%2310B981"/>
+  <path d="M75 25L85 15M85 15H77M85 15V23" stroke="%2310B981" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>`;
+            favicon.href = `data:image/svg+xml;base64,${btoa(svg)}`;
+        }
+
         function setTheme(isLight, animate = true) {
             // Transitions are handled by the static .theme-transition class on layout containers
             if (isLight) {
@@ -679,6 +704,7 @@
                 themeToggle.checked = false;
                 localStorage.setItem('theme', 'dark');
             }
+            updateFavicon(isLight);
         }
 
         // Initialize Theme
