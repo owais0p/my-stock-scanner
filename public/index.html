@@ -173,9 +173,6 @@
         body.light-theme #scan-status:not(.signal-up):not(.signal-down) { color: #64748b !important; }
 
         body.light-theme #strategy-scanner, 
-        body.light-theme #strategy-vcp,
-        body.light-theme #strategy-momentum2,
-        body.light-theme #strategy-vcp2,
         body.light-theme #strategy-momentum-open {
             background-color: #ffffff !important;
             border-color: #e2e8f0 !important;
@@ -190,7 +187,7 @@
         /* ---------------------------------- */
 
         /* Solid UI Overrides */
-        #strategy-scanner, #strategy-vcp, #strategy-momentum2, #strategy-vcp2, #strategy-momentum-open {
+        #strategy-scanner, #strategy-momentum-open {
             background-color: var(--surface-color);
         }
         #strategy-scanner.border-accent {
@@ -262,17 +259,14 @@
         }
 
         /* --- Strategy Tabs --- */
-        #strategy-scanner, #strategy-vcp, #strategy-momentum2, #strategy-vcp2, #strategy-momentum-open {
+        #strategy-scanner, #strategy-momentum-open {
             border: 1px solid var(--border-color);
         }
-        #strategy-scanner:hover, #strategy-vcp:hover, #strategy-momentum2:hover, #strategy-vcp2:hover, #strategy-momentum-open:hover {
+        #strategy-scanner:hover, #strategy-momentum-open:hover {
             border-color: var(--accent-color);
             background-color: rgba(52, 211, 153, 0.05);
         }
         body.light-theme #strategy-scanner:hover, 
-        body.light-theme #strategy-vcp:hover,
-        body.light-theme #strategy-momentum2:hover,
-        body.light-theme #strategy-vcp2:hover,
         body.light-theme #strategy-momentum-open:hover {
             background-color: #f8fafc; /* slate-50 */
             color: #0f172a; /* slate-900 */
@@ -450,13 +444,13 @@
             }
 
             /* Action Tabs Flex */
-            .mb-6.grid.grid-cols-5 {
+            .mb-6.grid.grid-cols-2 {
                 display: grid;
-                grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+                grid-template-columns: 1fr 1fr;
                 gap: 8px;
             }
             
-            #strategy-scanner, #strategy-vcp, #strategy-momentum2, #strategy-vcp2, #strategy-momentum-open {
+            #strategy-scanner, #strategy-momentum-open {
                 padding-top: 1rem;
                 padding-bottom: 1rem;
                 font-size: 8px;
@@ -524,18 +518,9 @@
         </div>
 
         <!-- Strategy Switcher -->
-        <div class="mb-6 grid grid-cols-5 gap-4 theme-transition">
+        <div class="mb-6 grid grid-cols-2 gap-4 theme-transition">
             <button id="strategy-scanner" class="bg-emerald-50/40 text-emerald-700 border-2 border-emerald-500 font-bold shadow-[0_2px_10px_rgba(5,150,105,0.06)] py-4 rounded text-[10px] tracking-[0.2em] transition-all duration-300 ease-out active:scale-[0.99] hover:transform-none uppercase dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-500/80 dark:shadow-[0_0_15px_rgba(16,185,129,0.15)]">
                 MOMENTUM VELOCITY
-            </button>
-            <button id="strategy-vcp" class="bg-white hover:bg-emerald-50/30 text-slate-600 hover:text-emerald-600 border border-slate-200/80 hover:border-emerald-300/80 shadow-sm hover:shadow-[0_8px_20px_-4px_rgba(5,150,105,0.12)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase dark:bg-[#0d131f]/60 dark:text-slate-400 dark:border-slate-800/80 dark:hover:bg-[#111827] dark:hover:text-emerald-400 dark:hover:border-emerald-500/40 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.08)]">
-                VCP Matrix
-            </button>
-            <button id="strategy-momentum2" class="bg-white hover:bg-emerald-50/30 text-slate-600 hover:text-emerald-600 border border-slate-200/80 hover:border-emerald-300/80 shadow-sm hover:shadow-[0_8px_20px_-4px_rgba(5,150,105,0.12)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase dark:bg-[#0d131f]/60 dark:text-slate-400 dark:border-slate-800/80 dark:hover:bg-[#111827] dark:hover:text-emerald-400 dark:hover:border-emerald-500/40 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.08)]">
-                MOMENTUM 2
-            </button>
-            <button id="strategy-vcp2" class="bg-white hover:bg-emerald-50/30 text-slate-600 hover:text-emerald-600 border border-slate-200/80 hover:border-emerald-300/80 shadow-sm hover:shadow-[0_8px_20px_-4px_rgba(5,150,105,0.12)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase dark:bg-[#0d131f]/60 dark:text-slate-400 dark:border-slate-800/80 dark:hover:bg-[#111827] dark:hover:text-emerald-400 dark:hover:border-emerald-500/40 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.08)]">
-                MOMENTUM VELOCITY 2.0
             </button>
             <button id="strategy-momentum-open" data-strategy="momentum_open_30" class="bg-white hover:bg-emerald-50/30 text-slate-600 hover:text-emerald-600 border border-slate-200/80 hover:border-emerald-300/80 shadow-sm hover:shadow-[0_8px_20px_-4px_rgba(5,150,105,0.12)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase dark:bg-[#0d131f]/60 dark:text-slate-400 dark:border-slate-800/80 dark:hover:bg-[#111827] dark:hover:text-emerald-400 dark:hover:border-emerald-500/40 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.08)]">
                 MOMENTUM OPEN 2.0
@@ -641,9 +626,6 @@
         
         // Strategy Switcher & Universe Refs
         const strategyScannerBtn = document.getElementById('strategy-scanner');
-        const strategyVcpBtn = document.getElementById('strategy-vcp');
-        const strategyMomentum2Btn = document.getElementById('strategy-momentum2');
-        const strategyVcp2Btn = document.getElementById('strategy-vcp2');
         const strategyMomentumOpenBtn = document.getElementById('strategy-momentum-open');
         const universeSelector = document.getElementById('universe-selector');
         const matrixEngineDisplay = document.getElementById('matrix-engine-display');
@@ -728,9 +710,7 @@
             resultsMeta.classList.add('hidden');
             resultCountBadge.classList.add('hidden');
             let strategyLabel = activeStrategy.toUpperCase();
-            if (activeStrategy === 'vcp_2') {
-                strategyLabel = 'MOMENTUM VELOCITY 2.0';
-            } else if (activeStrategy === 'momentum_open_30') {
+            if (activeStrategy === 'momentum_open_30') {
                 strategyLabel = 'MOMENTUM OPEN 2.0';
             }
             btnText.textContent = `Analyzing ${strategyLabel} Universe...`;
@@ -775,19 +755,13 @@
             const inactiveClass = 'bg-white hover:bg-gradient-to-tr hover:from-white hover:to-emerald-50/30 text-slate-600 hover:text-emerald-600 border border-slate-200/80 hover:border-emerald-300/80 shadow-sm hover:shadow-[0_8px_20px_-4px_rgba(5,150,105,0.12)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase dark:bg-[#0d131f]/60 dark:text-slate-400 dark:border-slate-800/80 dark:hover:bg-[#111827] dark:hover:text-emerald-400 dark:hover:border-emerald-500/30 dark:hover:shadow-[0_4px_20px_rgba(16,185,129,0.08)] dark:hover:-translate-y-[2px]';
             const activeClass = 'bg-emerald-50/40 text-emerald-700 border-2 border-emerald-500 font-bold shadow-[0_2px_10px_rgba(5,150,105,0.06)] py-4 rounded text-[10px] tracking-[0.2em] transition-all duration-300 ease-out active:scale-[0.99] hover:transform-none uppercase dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-500/80 dark:shadow-[0_0_15px_rgba(16,185,129,0.15)] font-bold';
 
-            [strategyScannerBtn, strategyVcpBtn, strategyMomentum2Btn, strategyVcp2Btn, strategyMomentumOpenBtn].forEach(btn => {
+            [strategyScannerBtn, strategyMomentumOpenBtn].forEach(btn => {
                 btn.className = inactiveClass;
             });
 
             let activeBtn;
             if (strategy === 'current') {
                 activeBtn = strategyScannerBtn;
-            } else if (strategy === 'vcp') {
-                activeBtn = strategyVcpBtn;
-            } else if (strategy === 'momentum_2') {
-                activeBtn = strategyMomentum2Btn;
-            } else if (strategy === 'vcp_2') {
-                activeBtn = strategyVcp2Btn;
             } else if (strategy === 'momentum_open_30') {
                 activeBtn = strategyMomentumOpenBtn;
             }
@@ -811,21 +785,9 @@
                 const rawVolume = stock.Volume || stock.volume || stock.VOL || stock.vol || 0;
                 
                 let label1 = '9 EMA:';
-                let val1 = stock.ema9;
+                let val1 = stock.price > 0 ? stock.ema9 : 'N/A';
                 let label2 = '20 EMA:';
-                let val2 = stock.ema20;
-
-                if (activeStrategy === 'vcp') {
-                    label1 = 'T2 COMP:';
-                    val1 = stock.ema9 + '%';
-                    label2 = 'T3 COMP:';
-                    val2 = stock.ema20 + '%';
-                } else if (activeStrategy === 'vcp_2') {
-                    label1 = '5D SQUEEZE:';
-                    val1 = stock.ema9 + '%';
-                    label2 = '50 EMA:';
-                    val2 = stock.ema20;
-                }
+                let val2 = stock.price > 0 ? stock.ema20 : 'N/A';
 
                 const card = document.createElement('div');
                 card.className = 'p-5 rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/80 dark:bg-[#0b0f19]/90 shadow-md hover:border-emerald-500/80 hover:shadow-[0_8px_30px_rgba(5,150,105,0.06)] dark:hover:border-emerald-500/60 dark:hover:shadow-[0_0_25px_rgba(16,185,129,0.12)] hover:-translate-y-[1px] transition-all duration-300 card-anim relative overflow-hidden group';
@@ -848,11 +810,11 @@
                         <div class="grid grid-cols-3 gap-2 flex-grow">
                             <div class="flex flex-col">
                                 <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">${label1}</span>
-                                <span class="text-[13px] font-bold text-slate-700 dark:text-slate-300 mt-0.5">${val1}</span>
+                                <span class="text-[13px] font-bold text-slate-700 dark:text-slate-300 mt-0.5">${stock.ema9}</span>
                             </div>
                             <div class="flex flex-col">
                                 <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">${label2}</span>
-                                <span class="text-[13px] font-bold text-slate-700 dark:text-slate-300 mt-0.5">${val2}</span>
+                                <span class="text-[13px] font-bold text-slate-700 dark:text-slate-300 mt-0.5">${stock.ema20}</span>
                             </div>
                             <div class="flex flex-col">
                                 <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">VOL:</span>
@@ -873,17 +835,7 @@
         function exportToCSV() {
             if (lastScanData.length === 0) return;
 
-            let labelEma9 = '9 EMA';
-            let labelEma20 = '20 EMA';
-            if (activeStrategy === 'vcp') {
-                labelEma9 = 'T2 Compression';
-                labelEma20 = 'T3 Compression';
-            } else if (activeStrategy === 'vcp_2') {
-                labelEma9 = '5D Squeeze Range';
-                labelEma20 = '50 EMA';
-            }
-
-            const headers = ['Ticker', 'Price (INR)', 'Change (%)', 'Volume', labelEma9, labelEma20, 'Momentum Condition', 'Tightness Score'];
+            const headers = ['Ticker', 'Price (INR)', 'Change (%)', 'Volume', '9 EMA', '20 EMA', 'Momentum Condition', 'Tightness Score'];
             const rows = lastScanData.map(stock => {
                 const rawVolume = stock.Volume || stock.volume || stock.VOL || stock.vol || 0;
                 return [
@@ -917,9 +869,6 @@
         scanBtn.addEventListener('click', triggerScan);
         exportBtn.addEventListener('click', exportToCSV);
         strategyScannerBtn.addEventListener('click', () => updateStrategy('current'));
-        strategyVcpBtn.addEventListener('click', () => updateStrategy('vcp'));
-        strategyMomentum2Btn.addEventListener('click', () => updateStrategy('momentum_2'));
-        strategyVcp2Btn.addEventListener('click', () => updateStrategy('vcp_2'));
         strategyMomentumOpenBtn.addEventListener('click', () => updateStrategy('momentum_open_30'));
         universeSelector.addEventListener('change', () => triggerScan());
     </script>

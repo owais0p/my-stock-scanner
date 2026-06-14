@@ -24,8 +24,9 @@ This document provides a comprehensive breakdown of the engineering decisions, t
     - **Price Floor**: Strict `if last_close < 50` rule to eliminate high-risk penny stocks.
     - **Liquidity Barrier**: Enforces a minimum **100k average daily volume** (20-day baseline) to ensure tradeability.
 - **Momentum Engines**:
-    - **Momentum Velocity**: Scores based on 9/20 EMA support and proximity to recent highs.
-    - **VCP Matrix**: Implements Mark Minervini's Volatility Contraction Pattern. Tracks structural tightening across three blocks (T1 > T2 > T3) with supply-absorption volume verification.
+- **Momentum Velocity**: Scores based on 9/20 EMA support and proximity to recent highs.
+- **Momentum Open 2.0**: A specialized high-alpha engine with a relaxed ₹30 price floor and no liquidity constraints, designed for early-session volatility capture.
+- **VCP Matrix**: Implements Mark Minervini's Volatility Contraction Pattern. Tracks structural tightening across three blocks (T1 > T2 > T3) with supply-absorption volume verification.
     - **Momentum 2**: Enforces tight consolidations above 9 & 20 EMA (3-day spread <= 7.0%) combined with volume dryup (< 85% of 20-day average).
     - **Momentum Velocity 2.0 (vcp_2)**: A wide-funnel ruleset enforcing short-term trend (Close strictly above daily 9 and 20 EMA) and relaxed squeeze limit (5-day high-to-low spread <= 15.0%) with all volume contraction filters deactivated.
 

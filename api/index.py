@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import yfinance as yf
 import pandas as pd
-import numpy as np
 import requests
 import io
 from datetime import datetime
@@ -65,7 +64,7 @@ def get_nse_universe(universe_mode: str):
 
 @app.get("/api/scan")
 async def run_scan(
-    strategy: str = Query("current", description="Strategy: current, momentum_open_30, vcp, momentum_2, or vcp_2"),
+    strategy: str = Query("current", description="Strategy: current or momentum_open_30"),
     universe: str = Query("chunk1", description="Target Matrix Chunk: chunk1-chunk5")
 ):
     # 1. DATA UPLINK & UNIVERSE TARGETING
@@ -179,125 +178,6 @@ async def run_scan(
                         "setup": "Open Breakout (Floor ₹30)"
                     }
             
-            # ====================================================
-            # ⚡ VCP MATRIX ENGINE (MARK MINERVINI COMPRESSION)
-            # ====================================================
-            elif strategy == "vcp":
-                # Keep original constraints intact
-                if last_close < 50: continue
-                avg_vol_20d = volume.iloc[-20:].mean()
-                if avg_vol_20d < 100000: continue
-
-                sma20 = close.rolling(window=20).mean()
-                if last_close < sma20.iloc[-1]: 
-                    continue
-                
-                range_t1 = (close.iloc[-24:-16].max() - close.iloc[-24:-16].min()) / close.iloc[-24:-16].mean()
-                range_t2 = (close.iloc[-16:-8].max() - close.iloc[-16:-8].min()) / close.iloc[-16:-8].mean()
-                range_t3 = (close.iloc[-8:].max() - close.iloc[-8:].min()) / close.iloc[-8:].mean()
-                
-                if range_t1 > range_t2 and range_t2 > range_t3:
-                    compression_ratio = round(range_t3 * 100, 2)
-                    vcp_score = round(100 - compression_ratio, 2)
-                    
-                    if volume.iloc[-8:].mean() < volume.iloc[-16:-8].mean():
-                        match_found = True
-                        metadata = {
-                            "ticker": ticker.replace(".NS", ""),
-                            "price": round(last_close, 2),
-                            "change": change,
-                            "Volume": val,
-                            "ema9": round(range_t2 * 100, 1), 
-                            "ema20": round(range_t3 * 100, 1), 
-                            "score": vcp_score,
-                            "setup": f"VCP Tightening ({compression_ratio}%)"
-                        }
-
-            # ====================================================
-            # 🚀 MOMENTUM 2 ENGINE (TIGHT CONSOLIDATION & DRY VOL)
-            # ====================================================
-            elif strategy == "momentum_2":
-                if last_close < 50: continue
-                avg_vol_20d = volume.iloc[-20:].mean()
-                if avg_vol_20d < 100000: continue
-
-                monthly_low = df["Low"].iloc[-20:].min()
-                if last_close >= (monthly_low * 1.15):
-                    ema9 = close.ewm(span=9, adjust=False).mean()
-                    ema20 = close.ewm(span=20, adjust=False).mean()
-                    
-                    lows_above_emas = True
-                    for idx in [-1, -2, -3]:
-                        if not (df["Low"].iloc[idx] >= ema9.iloc[idx] and df["Low"].iloc[idx] >= ema20.iloc[idx]):
-                            lows_above_emas = False
-                            break
-                    
-                    if lows_above_emas:
-                        high_3d = df["High"].iloc[-3:].max()
-                        low_3d = df["Low"].iloc[-3:].min()
-                        mean_close_3d = df["Close"].iloc[-3:].mean()
-                        spread_pct = ((high_3d - low_3d) / mean_close_3d) * 100
-                        
-                        if spread_pct <= 7.0:
-                            current_vol_3d_avg = volume.iloc[-3:].mean()
-                            volume_20d_avg = volume.iloc[-20:].mean()
-                            
-                            if current_vol_3d_avg < volume_20d_avg * 0.85:
-                                vol_ratio = (current_vol_3d_avg / volume_20d_avg)
-                                breakout_score = round(100 - (spread_pct / 7.0) * 50 - (vol_ratio / 0.85) * 50, 2)
-                                
-                                match_found = True
-                                metadata = {
-                                    "ticker": ticker.replace(".NS", ""),
-                                    "price": round(last_close, 2),
-                                    "change": change,
-                                    "Volume": val,
-                                    "ema9": round(ema9.iloc[-1], 2),
-                                    "ema20": round(ema20.iloc[-1], 2),
-                                    "score": breakout_score,
-                                    "setup": f"Momentum 2 (Spread: {spread_pct:.2f}%)"
-                                }
-
-            # ====================================================
-            # 📈 MOMENTUM VELOCITY 2.0 (THE ULTIMATE ENGINE)
-            # ====================================================
-            elif strategy == "vcp_2":
-                # Standalone tracking loop bypasses top level guards
-                monthly_low = df["Low"].iloc[-20:].min()
-                if last_close >= (monthly_low * 1.15):
-                    
-                    ema9 = close.ewm(span=9, adjust=False).mean()
-                    ema20 = close.ewm(span=20, adjust=False).mean()
-                    
-                    l_ema9 = ema9.iloc[-1]
-                    l_ema20 = ema20.iloc[-1]
-                    
-                    if last_close > l_ema9 and last_close > l_ema20:
-                        high_5d = df["High"].iloc[-5:].max()
-                        low_5d = df["Low"].iloc[-5:].min()
-                        mean_close_5d = df["Close"].iloc[-5:].mean()
-                        
-                        if mean_close_5d > 0:
-                            squeeze_range = round(((high_5d - low_5d) / mean_close_5d) * 100, 2)
-                            
-                            if squeeze_range <= 15.0:
-                                ema50 = close.ewm(span=50, adjust=False).mean()
-                                l_ema50 = ema50.iloc[-1] if not np.isnan(ema50.iloc[-1]) else l_ema20
-                                
-                                breakout_score = round(100 - (squeeze_range / 15.0) * 50, 2)
-                                        
-                                match_found = True
-                                metadata = {
-                                    "ticker": ticker.replace(".NS", ""),
-                                    "price": round(last_close, 2),
-                                    "change": change,
-                                    "Volume": val,
-                                    "ema9": squeeze_range, 
-                                    "ema20": round(l_ema50, 2), 
-                                    "score": breakout_score,
-                                    "setup": f"MV 2.0 (5D: {squeeze_range:.2f}%)"
-                                }
-
             if match_found:
                 results.append(metadata)
                 
