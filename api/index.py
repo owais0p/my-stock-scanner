@@ -100,7 +100,6 @@ async def run_scan(
             change = round(((last_close - prev_close) / prev_close) * 100, 2)
             
             # Anti-trash penny floor & Volume safety barrier for global loops
-            # Keep at 30 dynamically to allow the new open scanner to execute past the gate
             if last_close < 30: 
                 continue 
             
@@ -153,8 +152,11 @@ async def run_scan(
             # 🚀 RAYYAN OVERRIDE: OPEN MOMENTUM 2.0 (NEW ALAG BUTTON)
             # ====================================================
             elif strategy == "momentum_open_30":
-                # Condition 1: Relaxed Floor Room (Down to ₹30)
-                # Condition 2: No 1 Lakh Average Volume Constraint! (Completely Free Loop)
+                # Strict Live Daily Volume Gate: Must cross 20,000 shares today
+                current_day_vol = volume.iloc[-1]
+                if current_day_vol < 20000:
+                    continue
+
                 avg_vol_20d = volume.iloc[-20:].mean()
                 ema9 = close.ewm(span=9, adjust=False).mean()
                 ema20 = close.ewm(span=20, adjust=False).mean()
