@@ -221,6 +221,37 @@
         }
         /* ------------------------------ */
 
+        /* --- Cyber Checkbox Styling --- */
+        .cyber-checkbox {
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            background: rgba(0,0,0,0.2);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        .cyber-checkbox:checked {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 8px var(--accent-color);
+        }
+        .cyber-checkbox:checked::after {
+            content: "✓";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--bg-color);
+            font-size: 10px;
+            font-weight: 900;
+        }
+        /* ------------------------------ */
+
         .text-slate-300 { color: var(--text-primary); }
         .text-slate-100 { color: var(--text-primary); }
         .text-slate-500 { color: var(--text-secondary); }
@@ -571,6 +602,85 @@
                     </div>
                 </div>
 
+                <!-- Advanced Configuration Console (Interactive UI Deck) -->
+                <div class="space-y-4 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    
+                    <!-- Row 1: EMA Settings -->
+                    <div class="grid grid-cols-12 gap-2 items-end">
+                        <div class="col-span-4 space-y-1">
+                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1.5">
+                                <input type="checkbox" id="use_ema_filter" checked class="cyber-checkbox">
+                                EMA Filter (Fast)
+                            </label>
+                            <input type="number" id="ema_fast" value="9" 
+                                class="w-full bg-slate-100/50 dark:bg-background border border-slate-200 dark:border-border text-slate-800 dark:text-slate-300 py-2.5 px-3 rounded text-[10px] font-mono font-bold focus:outline-none focus:border-accent transition-all appearance-none">
+                        </div>
+                        <div class="col-span-4 space-y-1">
+                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest ml-1">Slow EMA</label>
+                            <input type="number" id="ema_slow" value="20" 
+                                class="w-full bg-slate-100/50 dark:bg-background border border-slate-200 dark:border-border text-slate-800 dark:text-slate-300 py-2.5 px-3 rounded text-[10px] font-mono font-bold focus:outline-none focus:border-accent transition-all appearance-none">
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Volume Settings -->
+                    <div class="grid grid-cols-12 gap-2 items-end">
+                        <div class="col-span-8 space-y-1">
+                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1.5">
+                                <input type="checkbox" id="use_vol_filter" checked class="cyber-checkbox">
+                                Min Volume Filter
+                            </label>
+                            <input type="number" id="min_volume" value="20000" step="5000"
+                                class="w-full bg-slate-100/50 dark:bg-background border border-slate-200 dark:border-border text-slate-800 dark:text-slate-300 py-2.5 px-3 rounded text-[10px] font-mono font-bold focus:outline-none focus:border-accent transition-all appearance-none">
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Consolidation Setup -->
+                    <div class="grid grid-cols-12 gap-2 items-end">
+                        <div class="col-span-4 space-y-1">
+                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest ml-1">Consol Period (Days)</label>
+                            <input type="number" id="consolidation_days" value="15" 
+                                class="w-full bg-slate-100/50 dark:bg-background border border-slate-200 dark:border-border text-slate-800 dark:text-slate-300 py-2.5 px-3 rounded text-[10px] font-mono font-bold focus:outline-none focus:border-accent transition-all appearance-none">
+                        </div>
+                        <div class="col-span-4 space-y-1">
+                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest ml-1">Consol Range %</label>
+                            <input type="number" id="consolidation_range" value="10.0" step="0.5"
+                                class="w-full bg-slate-100/50 dark:bg-background border border-slate-200 dark:border-border text-slate-800 dark:text-slate-300 py-2.5 px-3 rounded text-[10px] font-mono font-bold focus:outline-none focus:border-accent transition-all appearance-none">
+                        </div>
+                        <div class="col-span-4 pb-1">
+                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" id="use_consolidation" checked class="cyber-checkbox">
+                                Enable Consol
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Swing Run & Base Pullback -->
+                    <div class="grid grid-cols-12 gap-2 items-end">
+                        <div class="col-span-3 space-y-1">
+                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest ml-1">Min Swing %</label>
+                            <input type="number" id="swing_run_pct" value="15.0" step="1"
+                                class="w-full bg-slate-100/50 dark:bg-background border border-slate-200 dark:border-border text-slate-800 dark:text-slate-300 py-2.5 px-3 rounded text-[10px] font-mono font-bold focus:outline-none focus:border-accent transition-all appearance-none">
+                        </div>
+                        <div class="col-span-3 pb-1">
+                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" id="use_swing_run" checked class="cyber-checkbox">
+                                Swing Gate
+                            </label>
+                        </div>
+                        <div class="col-span-3 space-y-1">
+                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest ml-1">Max Base %</label>
+                            <input type="number" id="base_pullback_pct" value="15.0" step="1"
+                                class="w-full bg-slate-100/50 dark:bg-background border border-slate-200 dark:border-border text-slate-800 dark:text-slate-300 py-2.5 px-3 rounded text-[10px] font-mono font-bold focus:outline-none focus:border-accent transition-all appearance-none">
+                        </div>
+                        <div class="col-span-3 pb-1">
+                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" id="use_base_pullback" checked class="cyber-checkbox">
+                                Base Filter
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Command Station (Action Control Panel) -->
                 <div class="space-y-3">
                     <button id="scan-btn" class="w-full bg-accent text-background py-5 rounded font-black text-xs uppercase tracking-[0.2em] active:scale-95 transition-all flex items-center justify-center gap-2">
@@ -758,7 +868,22 @@
 
             try {
                 const universe = universeSelector.value;
-                const response = await fetch(`/api/scan?strategy=${activeStrategy}&universe=${universe}`);
+                // --- Dynamic UI Parameter Tweaker Hook ---
+                const emaFastVal = parseInt(document.getElementById('ema_fast').value, 10);
+                const emaSlowVal = parseInt(document.getElementById('ema_slow').value, 10);
+                const minVolVal = parseInt(document.getElementById('min_volume').value, 10);
+                const consolDays = parseInt(document.getElementById('consolidation_days').value, 10);
+                const consolRange = parseFloat(document.getElementById('consolidation_range').value);
+                const swingRun = parseFloat(document.getElementById('swing_run_pct').value);
+                const basePct = parseFloat(document.getElementById('base_pullback_pct').value);
+                
+                const useEma = document.getElementById('use_ema_filter').checked ? 1 : 0;
+                const useVol = document.getElementById('use_vol_filter').checked ? 1 : 0;
+                const useConsol = document.getElementById('use_consolidation').checked ? 1 : 0;
+                const useSwing = document.getElementById('use_swing_run').checked ? 1 : 0;
+                const useBase = document.getElementById('use_base_pullback').checked ? 1 : 0;
+
+                const response = await fetch(`/api/scan?strategy=${activeStrategy}&universe=${universe}&ema_fast=${emaFastVal}&ema_slow=${emaSlowVal}&min_volume=${minVolVal}&consolidation_days=${consolDays}&consolidation_range=${consolRange}&swing_run_pct=${swingRun}&base_pullback_pct=${basePct}&use_ema_filter=${useEma}&use_vol_filter=${useVol}&use_consolidation=${useConsol}&use_swing_run=${useSwing}&use_base_pullback=${useBase}`);
                 const result = await response.json();
 
                 if (result.status === 'success') {
@@ -824,11 +949,15 @@
             emptyState.classList.add('hidden');
             signalsContainer.innerHTML = '';
 
+            // --- Dynamic UI Parameter Label Hook ---
+            const emaFastLabel = document.getElementById('ema_fast').value;
+            const emaSlowLabel = document.getElementById('ema_slow').value;
+
             sortedStocks.forEach((stock, index) => {
                 const rawVolume = stock.Volume || stock.volume || stock.VOL || stock.vol || 0;
                 
-                let label1 = '9 EMA:';
-                let label2 = '20 EMA:';
+                let label1 = `${emaFastLabel} EMA:`;
+                let label2 = `${emaSlowLabel} EMA:`;
 
                 const card = document.createElement('div');
                 card.className = 'p-5 rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/80 dark:bg-[#0b0f19]/90 shadow-md hover:border-emerald-500/80 hover:shadow-[0_8px_30px_rgba(5,150,105,0.06)] dark:hover:border-emerald-500/60 dark:hover:shadow-[0_0_25px_rgba(16,185,129,0.12)] hover:-translate-y-[1px] transition-all duration-300 card-anim relative overflow-hidden group';
