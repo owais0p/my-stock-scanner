@@ -602,8 +602,15 @@
                     </div>
                 </div>
 
+                <!-- Cyber-Accordion Toggle -->
+                <button id="toggle_advanced_btn" class="w-full mb-4 bg-slate-50 dark:bg-[#0a0f18] border border-slate-200 dark:border-border hover:border-accent/50 dark:hover:border-accent/40 shadow-sm hover:shadow-[0_0_15px_rgba(16,185,129,0.1)] text-slate-600 dark:text-accent font-bold py-3 px-4 rounded text-[10px] tracking-[0.15em] uppercase transition-all flex items-center justify-center gap-2 group relative overflow-hidden">
+                    <div class="absolute inset-0 bg-gradient-to-r from-accent/0 via-accent/5 to-accent/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <span id="toggle_advanced_text" class="relative z-10 transition-colors duration-300">⚙️ EXPAND ADVANCED MATRIX CONTROLS</span>
+                </button>
+
                 <!-- Advanced Configuration Console (Interactive UI Deck) -->
-                <div class="space-y-4 mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div id="advanced_filters_panel" class="max-h-0 overflow-hidden opacity-0 transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)]">
+                    <div class="space-y-4 mb-6 pt-2">
                     
                     <!-- Row 1: EMA Settings -->
                     <div class="grid grid-cols-12 gap-2 items-end">
@@ -679,6 +686,7 @@
                             </label>
                         </div>
                     </div>
+                </div>
                 </div>
 
                 <!-- Command Station (Action Control Panel) -->
@@ -769,6 +777,44 @@
         const universeSelector = document.getElementById('universe-selector');
         const matrixEngineDisplay = document.getElementById('matrix-engine-display');
         const tickerSearch = document.getElementById('ticker-search');
+
+        // Advanced Filters Accordion Refs
+        const toggleAdvancedBtn = document.getElementById('toggle_advanced_btn');
+        const toggleAdvancedText = document.getElementById('toggle_advanced_text');
+        const advancedFiltersPanel = document.getElementById('advanced_filters_panel');
+
+        let isAdvancedOpen = false;
+
+        toggleAdvancedBtn.addEventListener('click', () => {
+            isAdvancedOpen = !isAdvancedOpen;
+            if (isAdvancedOpen) {
+                advancedFiltersPanel.classList.remove('max-h-0', 'opacity-0');
+                advancedFiltersPanel.classList.add('max-h-[1000px]', 'opacity-100');
+                toggleAdvancedText.innerHTML = '⚙️ COLLAPSE ADVANCED MATRIX CONTROLS <span class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-[2px] bg-accent rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>';
+                toggleAdvancedText.classList.add('text-accent');
+                toggleAdvancedBtn.classList.add('border-accent/50');
+                
+                // Ensure a clean slate when expanding (all filters off by default)
+                document.getElementById('use_ema_filter').checked = false;
+                document.getElementById('use_vol_filter').checked = false;
+                document.getElementById('use_consolidation').checked = false;
+                document.getElementById('use_swing_run').checked = false;
+                document.getElementById('use_base_pullback').checked = false;
+            } else {
+                advancedFiltersPanel.classList.remove('max-h-[1000px]', 'opacity-100');
+                advancedFiltersPanel.classList.add('max-h-0', 'opacity-0');
+                toggleAdvancedText.innerHTML = '⚙️ EXPAND ADVANCED MATRIX CONTROLS';
+                toggleAdvancedText.classList.remove('text-accent');
+                toggleAdvancedBtn.classList.remove('border-accent/50');
+                
+                // Enforce pure base strategy fallback when collapsed
+                document.getElementById('use_ema_filter').checked = false;
+                document.getElementById('use_vol_filter').checked = false;
+                document.getElementById('use_consolidation').checked = false;
+                document.getElementById('use_swing_run').checked = false;
+                document.getElementById('use_base_pullback').checked = false;
+            }
+        });
 
         let lastScanData = [];
         let activeStrategy = 'current';

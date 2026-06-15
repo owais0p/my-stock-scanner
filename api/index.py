@@ -98,11 +98,17 @@ async def run_scan(
             
             # 1. MODULAR VOLUME FILTER LOGIC
             if use_vol_filter == 1:
-                # Custom Active UI Filter
-                if val < min_volume: continue
+                # 🟩 ACTIVE CUSTOM UI FILTER MODE
+                if val < min_volume: 
+                    continue
             else:
-                # Fallback to Base Strategy Volume Rules
-                if avg_vol_20d < 100000: continue
+                # ⬛ PURE BASELINE FALLBACK MODE (Panel Closed or Unchecked)
+                if strategy == "current":
+                    if avg_vol_20d < 100000: 
+                        continue
+                elif strategy == "momentum_open_30":
+                    if val < 20000: 
+                        continue
 
             # 2. MODULAR EMA FILTER LOGIC
             if use_ema_filter == 1:
