@@ -135,8 +135,7 @@ async def run_scan(
                 l_ema20 = ema20.iloc[-1]
                 
                 if last_close > l_ema9 and last_close > l_ema20:
-                    pct_diff = ((last_close - l_ema20) / l_ema20) * 100
-                    score = round(100 - pct_diff, 2)
+                    vol_multiple = round(val / avg_vol_20d, 2) if avg_vol_20d > 0 else 1.0
 
                     match_found = True
                     metadata = {
@@ -146,7 +145,7 @@ async def run_scan(
                         "Volume": val,
                         "ema9": round(l_ema9, 2),
                         "ema20": round(l_ema20, 2),
-                        "score": score,
+                        "vol_multiple": vol_multiple,
                         "setup": "Momentum Breakout" if last_close > close.iloc[-20:].max() * 0.98 else "EMA Support"
                     }
 
@@ -156,6 +155,7 @@ async def run_scan(
             elif strategy == "momentum_open_30":
                 # Condition 1: Relaxed Floor Room (Down to ₹30)
                 # Condition 2: No 1 Lakh Average Volume Constraint! (Completely Free Loop)
+                avg_vol_20d = volume.iloc[-20:].mean()
                 ema9 = close.ewm(span=9, adjust=False).mean()
                 ema20 = close.ewm(span=20, adjust=False).mean()
                 
@@ -163,8 +163,7 @@ async def run_scan(
                 l_ema20 = ema20.iloc[-1]
                 
                 if last_close > l_ema9 and last_close > l_ema20:
-                    pct_diff = ((last_close - l_ema20) / l_ema20) * 100
-                    score = round(100 - pct_diff, 2)
+                    vol_multiple = round(val / avg_vol_20d, 2) if avg_vol_20d > 0 else 1.0
 
                     match_found = True
                     metadata = {
@@ -174,7 +173,7 @@ async def run_scan(
                         "Volume": val,
                         "ema9": round(l_ema9, 2),
                         "ema20": round(l_ema20, 2),
-                        "score": score,
+                        "vol_multiple": vol_multiple,
                         "setup": "Open Breakout (Floor ₹30)"
                     }
             
@@ -185,7 +184,7 @@ async def run_scan(
             continue
 
     # 3. PAYBOARD OUTPUT GENERATION
-    sorted_results = sorted(results, key=lambda x: x['score'], reverse=True)
+    sorted_results = sorted(results, key=lambda x: x['vol_multiple'], reverse=True)
     
     return {
         "status": "success",

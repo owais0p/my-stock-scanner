@@ -581,7 +581,13 @@
             <div class="md:col-span-7">
                 
                 <div class="flex justify-between items-center mb-4 pb-2 border-b border-border/50 section-header-mask">
-                    <h2 class="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Live Signals</h2>
+                    <div class="flex items-center gap-4">
+                        <h2 class="text-xs font-bold uppercase tracking-[0.3em] text-slate-500">Live Signals</h2>
+                        <select id="sort-selector" class="bg-transparent border-none text-[9px] font-bold text-slate-500 uppercase tracking-widest focus:outline-none cursor-pointer hover:text-accent transition-colors appearance-none">
+                            <option value="desc" class="bg-background">Sort: % High to Low</option>
+                            <option value="asc" class="bg-background">Sort: % Low to High</option>
+                        </select>
+                    </div>
                     <div id="result-count-badge" class="hidden text-[10px] font-bold text-accent uppercase tracking-widest">
                         Signals: <span id="signal-count">0</span>
                     </div>
@@ -620,6 +626,7 @@
         const resultsMeta = document.getElementById('results-meta');
         const signalCountSpan = document.getElementById('signal-count');
         const resultCountBadge = document.getElementById('result-count-badge');
+        const sortSelector = document.getElementById('sort-selector');
         
         // Theme Toggle Refs
         const themeToggle = document.getElementById('theme-toggle');
@@ -643,6 +650,13 @@
             if (vol >= 1000) return (vol / 1000).toFixed(1) + 'K';
             return vol.toString();
         }
+
+        // --- Client-side Sorting ---
+        sortSelector.addEventListener('change', () => {
+            if (lastScanData.length > 0) {
+                renderSignals(lastScanData);
+            }
+        });
 
         // --- Client-side Search Filter ---
         tickerSearch.addEventListener('input', (e) => {
@@ -778,20 +792,30 @@
                 return;
             }
 
+            // --- Client-side Sort Logic ---
+            const sortMode = sortSelector.value;
+            const sortedStocks = [...stocks].sort((a, b) => {
+                return sortMode === 'desc' ? b.change - a.change : a.change - b.change;
+            });
+
+            const searchQuery = tickerSearch.value.toUpperCase();
             emptyState.classList.add('hidden');
             signalsContainer.innerHTML = '';
 
-            stocks.forEach((stock, index) => {
+            sortedStocks.forEach((stock, index) => {
                 const rawVolume = stock.Volume || stock.volume || stock.VOL || stock.vol || 0;
                 
                 let label1 = '9 EMA:';
-                let val1 = stock.price > 0 ? stock.ema9 : 'N/A';
                 let label2 = '20 EMA:';
-                let val2 = stock.price > 0 ? stock.ema20 : 'N/A';
 
                 const card = document.createElement('div');
                 card.className = 'p-5 rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/80 dark:bg-[#0b0f19]/90 shadow-md hover:border-emerald-500/80 hover:shadow-[0_8px_30px_rgba(5,150,105,0.06)] dark:hover:border-emerald-500/60 dark:hover:shadow-[0_0_25px_rgba(16,185,129,0.12)] hover:-translate-y-[1px] transition-all duration-300 card-anim relative overflow-hidden group';
                 
+                // --- Apply active search filter immediately ---
+                if (searchQuery && !stock.ticker.toUpperCase().includes(searchQuery)) {
+                    card.style.display = 'none';
+                }
+
                 card.innerHTML = `
                     <div class="flex justify-between items-start mb-4">
                         <div>
@@ -801,8 +825,8 @@
                                 <span class="text-[10px] ${stock.change >= 0 ? 'signal-up' : 'signal-down'} uppercase tracking-widest bg-slate-100/50 dark:bg-transparent px-1.5 py-0.5 rounded font-bold">(${stock.change >= 0 ? '+' : ''}${stock.change}%)</span>
                             </div>
                         </div>
-                        <div class="px-2 py-0.5 text-xs font-mono bg-slate-100 dark:bg-slate-800/50 border border-slate-200/40 dark:border-slate-700/50 rounded text-slate-600 dark:text-slate-400">
-                            SCORE: ${stock.score}
+                        <div class="px-2 py-0.5 text-xs font-mono bg-slate-100 dark:bg-slate-800/50 border border-slate-200/40 dark:border-slate-700/50 rounded ${stock.vol_multiple >= 2.0 ? 'text-[#00ff9d] border-[#00ff9d]/30 shadow-[0_0_10px_rgba(0,255,157,0.1)]' : 'text-slate-600 dark:text-slate-400'} font-bold">
+                            VOL MULTIPLE: ${stock.vol_multiple}x
                         </div>
                     </div>
 
@@ -835,7 +859,7 @@
         function exportToCSV() {
             if (lastScanData.length === 0) return;
 
-            const headers = ['Ticker', 'Price (INR)', 'Change (%)', 'Volume', '9 EMA', '20 EMA', 'Momentum Condition', 'Tightness Score'];
+            const headers = ['Ticker', 'Price (INR)', 'Change (%)', 'Volume', '9 EMA', '20 EMA', 'Momentum Condition', 'Vol Multiple'];
             const rows = lastScanData.map(stock => {
                 const rawVolume = stock.Volume || stock.volume || stock.VOL || stock.vol || 0;
                 return [
@@ -846,7 +870,7 @@
                     stock.ema9,
                     stock.ema20,
                     stock.setup,
-                    stock.score
+                    stock.vol_multiple
                 ];
             });
 
