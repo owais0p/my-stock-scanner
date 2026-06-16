@@ -187,3 +187,13 @@ async def run_scan(
     }
 
 app.mount("/", StaticFiles(directory="public", html=True), name="public")
+
+# ====================================================================
+# 🚀 HUGGING FACE PRODUCTION SERVER STARTUP BLOCK
+# ====================================================================
+if __name__ == "__main__":
+    import uvicorn
+    import os
+    # Hugging Face Spaces strictly injects a target PORT env variable, defaulting to 7860
+    port = int(os.environ.get("PORT", 7860))
+    uvicorn.run("index:app", host="0.0.0.0", port=port, reload=False)
