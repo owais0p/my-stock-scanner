@@ -568,7 +568,7 @@
                 MOMENTUM VELOCITY
             </button>
             <button id="strategy-momentum-open" data-strategy="momentum_open_30" class="bg-white hover:bg-emerald-50/30 text-slate-600 hover:text-emerald-600 border border-slate-200/80 hover:border-emerald-300/80 shadow-sm hover:shadow-[0_8px_20px_-4px_rgba(5,150,105,0.12)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase dark:bg-[#0d131f]/60 dark:text-slate-400 dark:border-slate-800/80 dark:hover:bg-[#111827] dark:hover:text-emerald-400 dark:hover:border-emerald-500/40 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.08)]">
-                MOMENTUM OPEN 2.0
+                MOMENTUM VORTEX
             </button>
         </div>
 
@@ -576,11 +576,11 @@
         <div class="mb-10 space-y-2">
             <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest block ml-1">Select Market Universe</label>
             <select id="universe-selector" class="w-full bg-background border border-border text-slate-300 py-4 px-4 rounded text-[10px] font-bold tracking-widest uppercase focus:outline-none focus:border-accent transition-all cursor-pointer">
-                <option value="chunk1">Chunk 1: Large & Mid-caps (>₹15,000 Cr)</option>
-                <option value="chunk2">Chunk 2: Established Small-caps (₹5,000 Cr - ₹15,000 Cr)</option>
-                <option value="chunk3">Chunk 3: Micro-caps Alpha A (₹1,000 Cr - ₹5,000 Cr)</option>
-                <option value="chunk4">Chunk 4: Micro-caps Alpha B (₹500 Cr - ₹1,000 Cr)</option>
-                <option value="chunk5">Chunk 5: Nano-caps Momentum (₹100 Cr - ₹500 Cr)</option>
+                <option value="chunk1">LARGE TITAN</option>
+                <option value="chunk2">MID STORM</option>
+                <option value="chunk3">SMALL APEX</option>
+                <option value="chunk4">MICRO VORTEX</option>
+                <option value="chunk5">NANO ROCKET</option>
             </select>
         </div>
 
@@ -910,7 +910,7 @@
             resultCountBadge.classList.add('hidden');
             let strategyLabel = activeStrategy.toUpperCase();
             if (activeStrategy === 'momentum_open_30') {
-                strategyLabel = 'MOMENTUM OPEN 2.0';
+                strategyLabel = 'MOMENTUM VORTEX';
             }
             btnText.textContent = `Analyzing ${strategyLabel} Universe...`;
             loadingSpinner.classList.remove('hidden');
