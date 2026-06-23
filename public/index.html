@@ -11,6 +11,8 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&family=Inter:wght@400;600;900&family=Iceland&display=swap" rel="stylesheet">
     <!-- TradingView Core Script -->
     <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+    <!-- TradingView Lightweight Charts Library (Canvas-based) -->
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -727,6 +729,12 @@
                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
                         </div>
+
+                        <!-- View Toggle Switcher (List vs Grid/Maze) -->
+                        <div class="flex items-center border border-slate-200 dark:border-slate-800/80 rounded-full p-0.5 bg-slate-100/50 dark:bg-[#0d131f] text-[9px] md:text-[10px] font-bold shadow-sm dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)] select-none">
+                            <button id="view-mode-list" class="px-2.5 py-1 rounded-full shadow-sm transition-all uppercase tracking-wider text-[#10B981] bg-white dark:bg-background" style="color: var(--accent-color);">List</button>
+                            <button id="view-mode-maze" class="px-2.5 py-1 rounded-full transition-all uppercase tracking-wider text-slate-500 hover:text-accent">Maze</button>
+                        </div>
                     </div>
                     <div id="result-count-badge" class="hidden text-[10px] font-bold text-accent uppercase tracking-widest">
                         Signals: <span id="signal-count">0</span>
@@ -818,6 +826,34 @@
 
         let lastScanData = [];
         let activeStrategy = 'current';
+        let activeViewMode = 'list';
+        let activeCharts = {};
+
+        const viewModeListBtn = document.getElementById('view-mode-list');
+        const viewModeMazeBtn = document.getElementById('view-mode-maze');
+
+        function setViewMode(mode) {
+            activeViewMode = mode;
+            if (mode === 'list') {
+                viewModeListBtn.className = 'px-2.5 py-1 rounded-full shadow-sm transition-all uppercase tracking-wider text-[#10B981] bg-white dark:bg-background';
+                viewModeListBtn.style.color = 'var(--accent-color)';
+                viewModeMazeBtn.className = 'px-2.5 py-1 rounded-full transition-all uppercase tracking-wider text-slate-500 hover:text-accent';
+                viewModeMazeBtn.style.color = '';
+                signalsContainer.className = 'space-y-3 min-h-[300px]';
+            } else {
+                viewModeMazeBtn.className = 'px-2.5 py-1 rounded-full shadow-sm transition-all uppercase tracking-wider text-[#10B981] bg-white dark:bg-background';
+                viewModeMazeBtn.style.color = 'var(--accent-color)';
+                viewModeListBtn.className = 'px-2.5 py-1 rounded-full transition-all uppercase tracking-wider text-slate-500 hover:text-accent';
+                viewModeListBtn.style.color = '';
+                signalsContainer.className = 'grid grid-cols-1 sm:grid-cols-2 gap-4 min-h-[300px]';
+            }
+            if (lastScanData.length > 0) {
+                renderSignals(lastScanData);
+            }
+        }
+
+        viewModeListBtn.addEventListener('click', () => setViewMode('list'));
+        viewModeMazeBtn.addEventListener('click', () => setViewMode('maze'));
 
         // Force-sync visual state on app boot
         document.getElementById('use_ema_filter').checked = false;
@@ -898,6 +934,15 @@
 
         themeToggle.addEventListener('change', () => {
             setTheme(themeToggle.checked, true);
+            
+            // Reload active charts in new theme mode
+            Object.keys(activeCharts).forEach(ticker => {
+                const containerId = `tv-chart-container-${ticker}`;
+                const container = document.getElementById(containerId);
+                if (container && !container.classList.contains('hidden')) {
+                    loadInteractiveChart(ticker);
+                }
+            });
         });
         // ------------------
 
@@ -984,6 +1029,189 @@
             triggerScan();
         }
 
+        function generateSparklineSVG(history, change) {
+            if (!history || history.length < 2) return '';
+            
+            // Extract raw values from the history array of objects
+            const values = history.map(h => h.value);
+            
+            const width = 120;
+            const height = 30;
+            const padding = 2;
+            
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            const range = max - min === 0 ? 1 : max - min;
+            
+            const points = values.map((price, idx) => {
+                const x = padding + (idx / (values.length - 1)) * (width - 2 * padding);
+                const y = padding + (1 - (price - min) / range) * (height - 2 * padding);
+                return `${x.toFixed(1)},${y.toFixed(1)}`;
+            });
+            
+            const isPositive = change >= 0;
+            const strokeColor = isPositive ? '#10B981' : '#f87171';
+            const gradientId = `sparkline-grad-${Math.random().toString(36).substr(2, 9)}`;
+            const fillPoints = [
+                `${padding.toFixed(1)},${height.toFixed(1)}`,
+                ...points,
+                `${(width - padding).toFixed(1)},${height.toFixed(1)}`
+            ].join(' ');
+
+            return `
+                <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" class="overflow-visible select-none pointer-events-none">
+                    <defs>
+                        <linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="${strokeColor}" stop-opacity="0.25"></stop>
+                            <stop offset="100%" stop-color="${strokeColor}" stop-opacity="0.00"></stop>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="${fillPoints}" fill="url(#${gradientId})"></polygon>
+                    <polyline fill="none" stroke="${strokeColor}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" points="${points.join(' ')}"></polyline>
+                </svg>
+            `;
+        }
+
+        function loadInteractiveChart(ticker, event) {
+            if (event) {
+                event.stopPropagation();
+            }
+            
+            const containerId = `tv-chart-container-${ticker}`;
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            // Clean up existing chart instances to prevent memory leaks and observer bugs
+            if (activeCharts[ticker] && typeof activeCharts[ticker] === 'object' && typeof activeCharts[ticker].remove === 'function') {
+                try {
+                    activeCharts[ticker].remove();
+                } catch (e) {
+                    console.error("Error cleaning up chart instance", e);
+                }
+            }
+            if (container._resizeObserver) {
+                try {
+                    container._resizeObserver.disconnect();
+                } catch (e) {}
+                delete container._resizeObserver;
+            }
+            
+            container.innerHTML = '';
+            
+            // Grab history data from our scan payload
+            const stockData = lastScanData.find(s => s.ticker === ticker);
+            if (!stockData || !stockData.history || stockData.history.length === 0) {
+                container.innerHTML = '<div class="w-full h-full flex items-center justify-center text-[10px] text-slate-500 font-bold">[ NO DATA AVAILABLE ]</div>';
+                return;
+            }
+            
+            const isLight = document.body.classList.contains('light-theme');
+            
+            // Initialize the canvas chart programmatically using Lightweight Charts
+            const chart = LightweightCharts.createChart(container, {
+                width: container.clientWidth,
+                height: container.clientHeight,
+                layout: {
+                    background: { type: 'solid', color: 'transparent' },
+                    textColor: isLight ? '#475569' : '#94a3b8',
+                    fontFamily: 'Inter, sans-serif',
+                },
+                grid: {
+                    vertLines: { visible: false },
+                    horzLines: { color: isLight ? 'rgba(226, 232, 240, 0.4)' : 'rgba(30, 41, 59, 0.3)' },
+                },
+                rightPriceScale: {
+                    borderVisible: false,
+                    textColor: isLight ? '#475569' : '#94a3b8',
+                },
+                timeScale: {
+                    borderVisible: false,
+                    timeVisible: true,
+                    secondsVisible: false,
+                },
+                crosshair: {
+                    horzLine: {
+                        labelVisible: false,
+                    },
+                },
+                handleScale: {
+                    axisPressedMouseMove: true,
+                    mouseWheel: true,
+                    pinch: true,
+                },
+                handleScroll: {
+                    mouseWheel: true,
+                    pressedMouseMove: true,
+                    horzTouchDrag: true,
+                }
+            });
+            
+            const areaSeries = chart.addAreaSeries({
+                lineColor: isLight ? '#059669' : '#10B981',
+                topColor: isLight ? 'rgba(5, 150, 105, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                bottomColor: isLight ? 'rgba(5, 150, 105, 0.0)' : 'rgba(16, 185, 129, 0.0)',
+                lineWidth: 2,
+                priceFormat: {
+                    type: 'price',
+                    precision: 2,
+                    minMove: 0.05,
+                },
+            });
+            
+            // Set data sorted ascending by time
+            const sortedHistory = [...stockData.history].sort((a, b) => a.time.localeCompare(b.time));
+            areaSeries.setData(sortedHistory);
+            
+            chart.timeScale().fitContent();
+            
+            // Cache chart instance
+            activeCharts[ticker] = chart;
+            
+            // Setup ResizeObserver to make the canvas responsive in flex/grid layouts
+            const resizeObserver = new ResizeObserver(entries => {
+                if (entries.length === 0 || !entries[0].contentRect) return;
+                const { width, height } = entries[0].contentRect;
+                if (width > 0 && height > 0) {
+                    chart.resize(width, height);
+                    chart.timeScale().fitContent();
+                }
+            });
+            resizeObserver.observe(container);
+            container._resizeObserver = resizeObserver;
+        }
+
+        function toggleInlineChart(ticker, buttonElement) {
+            const containerId = `tv-chart-container-${ticker}`;
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            const btnLabel = buttonElement.querySelector('.btn-lbl');
+            
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                btnLabel.textContent = 'HIDE CHART';
+                loadInteractiveChart(ticker);
+            } else {
+                container.classList.add('hidden');
+                btnLabel.textContent = 'SHOW CHART';
+                
+                // Destroy chart and observer to release memory resources
+                if (activeCharts[ticker] && typeof activeCharts[ticker] === 'object') {
+                    try {
+                        activeCharts[ticker].remove();
+                    } catch (e) {}
+                    delete activeCharts[ticker];
+                }
+                if (container._resizeObserver) {
+                    try {
+                        container._resizeObserver.disconnect();
+                    } catch (e) {}
+                    delete container._resizeObserver;
+                }
+                container.innerHTML = '';
+            }
+        }
+
         function renderSignals(stocks) {
             if (stocks.length === 0) {
                 emptyState.classList.remove('hidden');
@@ -1002,6 +1230,16 @@
             emptyState.classList.add('hidden');
             signalsContainer.innerHTML = '';
 
+            // Clean up existing chart instances to avoid memory leaks before redrawing
+            Object.keys(activeCharts).forEach(ticker => {
+                if (activeCharts[ticker] && typeof activeCharts[ticker].remove === 'function') {
+                    try {
+                        activeCharts[ticker].remove();
+                    } catch (e) {}
+                }
+            });
+            activeCharts = {};
+
             // --- Dynamic UI Parameter Label Hook ---
             const emaFastLabel = document.getElementById('ema_fast').value;
             const emaSlowLabel = document.getElementById('ema_slow').value;
@@ -1009,8 +1247,8 @@
             sortedStocks.forEach((stock, index) => {
                 const rawVolume = stock.Volume || stock.volume || stock.VOL || stock.vol || 0;
                 
-                let label1 = `${emaFastLabel} EMA:`;
-                let label2 = `${emaSlowLabel} EMA:`;
+                let label1 = `${emaFastLabel} EMA`;
+                let label2 = `${emaSlowLabel} EMA`;
 
                 const card = document.createElement('div');
                 card.className = 'p-5 rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/80 dark:bg-[#0b0f19]/90 shadow-md hover:border-emerald-500/80 hover:shadow-[0_8px_30px_rgba(5,150,105,0.06)] dark:hover:border-emerald-500/60 dark:hover:shadow-[0_0_25px_rgba(16,185,129,0.12)] hover:-translate-y-[1px] transition-all duration-300 card-anim relative overflow-hidden group';
@@ -1020,45 +1258,149 @@
                     card.style.display = 'none';
                 }
 
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <h3 class="text-lg font-bold tracking-wide text-slate-800 dark:text-slate-100 uppercase">${stock.ticker}</h3>
-                            <div class="flex items-center gap-2 mt-1 dark:bg-slate-900/60 dark:border-slate-800 rounded px-2 py-1 w-fit">
-                                <span class="text-[10px] font-medium text-slate-500 uppercase tracking-widest bg-slate-100/50 dark:bg-transparent px-1.5 py-0.5 rounded">CMP: ₹${stock.price.toLocaleString('en-IN')}</span>
-                                <span class="text-[10px] ${stock.change >= 0 ? 'signal-up' : 'signal-down'} uppercase tracking-widest bg-slate-100/50 dark:bg-transparent px-1.5 py-0.5 rounded font-bold">(${stock.change >= 0 ? '+' : ''}${stock.change}%)</span>
+                if (activeViewMode === 'list') {
+                    card.innerHTML = `
+                        <div class="flex flex-col">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="text-lg font-bold tracking-wide text-slate-800 dark:text-slate-100 uppercase flex items-center gap-1.5">
+                                        ${stock.ticker}
+                                        <a href="https://www.tradingview.com/chart/?symbol=NSE:${stock.ticker}" target="_blank" class="text-slate-400 hover:text-accent transition-colors" title="Open in TradingView (New Tab)">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                        </a>
+                                    </h3>
+                                    <div class="flex items-center gap-2 mt-1 dark:bg-slate-900/60 dark:border-slate-800 rounded px-2 py-1 w-fit">
+                                        <span class="text-[10px] font-medium text-slate-500 uppercase tracking-widest bg-slate-100/50 dark:bg-transparent px-1.5 py-0.5 rounded">CMP: ₹${stock.price.toLocaleString('en-IN')}</span>
+                                        <span class="text-[10px] ${stock.change >= 0 ? 'signal-up' : 'signal-down'} uppercase tracking-widest bg-slate-100/50 dark:bg-transparent px-1.5 py-0.5 rounded font-bold">(${stock.change >= 0 ? '+' : ''}${stock.change}%)</span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col items-end gap-1">
+                                    <div class="px-2 py-0.5 text-[10px] font-mono bg-slate-100 dark:bg-slate-800/50 border border-slate-200/40 dark:border-slate-700/50 rounded ${stock.vol_multiple >= 2.0 ? 'text-[#00ff9d] border-[#00ff9d]/30 shadow-[0_0_10px_rgba(0,255,157,0.1)]' : 'text-slate-600 dark:text-slate-400'} font-bold">
+                                        VOL MULTIPLE: ${stock.vol_multiple}x
+                                    </div>
+                                    <div class="text-[8px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">${stock.setup}</div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="px-2 py-0.5 text-xs font-mono bg-slate-100 dark:bg-slate-800/50 border border-slate-200/40 dark:border-slate-700/50 rounded ${stock.vol_multiple >= 2.0 ? 'text-[#00ff9d] border-[#00ff9d]/30 shadow-[0_0_10px_rgba(0,255,157,0.1)]' : 'text-slate-600 dark:text-slate-400'} font-bold">
-                            VOL MULTIPLE: ${stock.vol_multiple}x
-                        </div>
-                    </div>
 
-                    <div class="flex justify-between items-end border-t border-slate-100 dark:border-slate-800/80 pt-3 mt-3">
-                        <div class="grid grid-cols-3 gap-2 flex-grow">
-                            <div class="flex flex-col">
-                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">${label1}</span>
-                                <span class="text-[13px] font-bold text-slate-700 dark:text-slate-300 mt-0.5">${stock.ema9}</span>
+                            <div class="flex justify-between items-center border-t border-slate-100 dark:border-slate-800/80 pt-3 mt-3">
+                                <div class="grid grid-cols-3 gap-2 flex-grow">
+                                    <div class="flex flex-col">
+                                        <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">${label1}</span>
+                                        <span class="text-[13px] font-bold text-slate-700 dark:text-slate-300 mt-0.5">${stock.ema9}</span>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">${label2}</span>
+                                        <span class="text-[13px] font-bold text-slate-700 dark:text-slate-300 mt-0.5">${stock.ema20}</span>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">VOL:</span>
+                                        <span class="text-[13px] font-bold text-slate-700 dark:text-slate-300 mt-0.5">${formatVolume(rawVolume)}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center gap-4 shrink-0">
+                                    <!-- Sparkline -->
+                                    <div class="hidden sm:block">
+                                        ${generateSparklineSVG(stock.history, stock.change)}
+                                    </div>
+                                    <button class="toggle-chart-btn text-xs font-semibold text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-300 hover:underline tracking-wide transition-colors duration-200 flex items-center gap-1.5" data-ticker="${stock.ticker}">
+                                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                                        <span class="btn-lbl">SHOW CHART</span>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="flex flex-col">
-                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">${label2}</span>
-                                <span class="text-[13px] font-bold text-slate-700 dark:text-slate-300 mt-0.5">${stock.ema20}</span>
+                            
+                            <!-- Inline Chart Container -->
+                            <div id="tv-chart-container-${stock.ticker}" class="hidden mt-4 w-full h-[320px] border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-slate-900/10"></div>
+                        </div>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <div class="flex flex-col h-full justify-between">
+                            <div class="flex justify-between items-center mb-3">
+                                <div>
+                                    <h3 class="text-md font-bold tracking-wide text-slate-800 dark:text-slate-100 uppercase flex items-center gap-1.5">
+                                        ${stock.ticker}
+                                        <a href="https://www.tradingview.com/chart/?symbol=NSE:${stock.ticker}" target="_blank" class="text-slate-400 hover:text-accent transition-colors" title="Open in TradingView">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                                        </a>
+                                    </h3>
+                                    <div class="flex items-center gap-1.5 mt-0.5">
+                                        <span class="text-[10px] font-bold text-slate-600 dark:text-slate-400">₹${stock.price.toLocaleString('en-IN')}</span>
+                                        <span class="text-[10px] ${stock.change >= 0 ? 'signal-up' : 'signal-down'} font-bold">(${stock.change >= 0 ? '+' : ''}${stock.change}%)</span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col items-end gap-0.5">
+                                    <div class="px-1.5 py-0.5 text-[9px] font-mono bg-slate-100 dark:bg-slate-800/50 border border-slate-200/40 dark:border-slate-700/50 rounded text-slate-600 dark:text-slate-400 font-bold">
+                                        Vol: ${stock.vol_multiple}x
+                                    </div>
+                                </div>
                             </div>
-                            <div class="flex flex-col">
-                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">VOL:</span>
-                                <span class="text-[13px] font-bold text-slate-700 dark:text-slate-300 mt-0.5">${formatVolume(rawVolume)}</span>
+                            
+                            <!-- Chart Area -->
+                            <div id="tv-chart-container-${stock.ticker}" class="w-full h-[240px] border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden bg-slate-900/10 mb-2 relative">
+                                <!-- Placeholder that loads automatically or on-click -->
+                                <div class="absolute inset-0 flex flex-col items-center justify-center text-[10px] text-slate-500 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors select-none" onclick="loadInteractiveChart('${stock.ticker}', event)">
+                                    <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse mb-1"></div>
+                                    <span class="font-bold">CLICK TO LOAD CHART</span>
+                                </div>
                             </div>
                         </div>
-                        <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-300 hover:underline tracking-wide transition-colors duration-200 flex items-center gap-1.5 shrink-0">
-                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                            VIEW CHART
-                        </span>
-                    </div>
-                `;
-                
+                    `;
+                }
+
                 signalsContainer.appendChild(card);
             });
+
+            // Post-rendering actions for Maze mode: automatically load the first 6 charts
+            if (activeViewMode === 'maze') {
+                const autoLoadLimit = 6;
+                let autoloaded = 0;
+                sortedStocks.forEach((stock, index) => {
+                    if (searchQuery && !stock.ticker.toUpperCase().includes(searchQuery)) {
+                        return;
+                    }
+                    if (autoloaded < autoLoadLimit) {
+                        autoloaded++;
+                        setTimeout(() => {
+                            loadInteractiveChart(stock.ticker);
+                        }, 50 * autoloaded);
+                    }
+                });
+            }
         }
+
+        // Use event delegation for signal container actions
+        signalsContainer.addEventListener('click', (event) => {
+            // Click on SHOW CHART/HIDE CHART toggle button (List Mode)
+            const toggleBtn = event.target.closest('.toggle-chart-btn');
+            if (toggleBtn) {
+                event.preventDefault();
+                event.stopPropagation();
+                const ticker = toggleBtn.getAttribute('data-ticker');
+                toggleInlineChart(ticker, toggleBtn);
+                return;
+            }
+
+            // Click on external links (should open new tab normally)
+            const extLink = event.target.closest('a');
+            if (extLink) {
+                return;
+            }
+
+            // Click on list card (can toggle chart inline if clicked)
+            if (activeViewMode === 'list') {
+                const card = event.target.closest('.card-anim');
+                if (card) {
+                    const btn = card.querySelector('.toggle-chart-btn');
+                    if (btn) {
+                        event.preventDefault();
+                        const ticker = btn.getAttribute('data-ticker');
+                        toggleInlineChart(ticker, btn);
+                    }
+                }
+            }
+        });
 
         function exportToCSV() {
             if (lastScanData.length === 0) return;
@@ -1100,19 +1442,6 @@
         strategyMomentumOpenBtn.addEventListener('click', () => updateStrategy('momentum_open_30'));
         universeSelector.addEventListener('change', () => triggerScan());
     </script>
-    <script>
-        document.addEventListener('click', function(event) {
-            const card = event.target.closest('.card-anim');
-            if (card) {
-                let tickerText = card.querySelector('h3')?.innerText || card.innerText;
-                let match = tickerText.match(/[A-Z]+/);
-                if (match) {
-                    let ticker = match[0].trim();
-                    event.preventDefault();
-                    window.open('https://www.tradingview.com/chart/?symbol=NSE:' + ticker, '_blank');
-                }
-            }
-        }, true);
-    </script>
+    <!-- Global card click tab-opening intercepted handler removed in favor of inline show/hide buttons and grid views -->
 </body>
 </html>

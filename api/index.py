@@ -162,6 +162,10 @@ async def run_scan(
             if use_base_pullback == 1: active_custom_filters.append("Base")
             
             setup_label = " | ".join(active_custom_filters) if active_custom_filters else "Pure Base Strategy"
+            history_prices = [
+                {"time": date.strftime("%Y-%m-%d"), "value": round(val, 2)}
+                for date, val in close.iloc[-30:].items()
+            ]
 
             metadata = {
                 "ticker": ticker.replace(".NS", ""),
@@ -171,7 +175,8 @@ async def run_scan(
                 "ema9": round(l_ema_f, 2),
                 "ema20": round(l_ema_s, 2),
                 "vol_multiple": vol_multiple,
-                "setup": setup_label
+                "setup": setup_label,
+                "history": history_prices
             }
             results.append(metadata)
                 
