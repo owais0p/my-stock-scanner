@@ -1124,7 +1124,7 @@
 
             const isLight = document.body.classList.contains('light-theme');
 
-            // Convert 90 days data to category format to avoid holiday/weekend gaps
+            // Convert 120 days data to category format to avoid holiday/weekend gaps
             const seriesData = stockData.ohlcv.map(row => ({
                 x: row.time, // Use string date directly as category label
                 y: [row.open, row.high, row.low, row.close]
@@ -1158,7 +1158,22 @@
                     type: 'line',
                     height: '100%',
                     background: 'transparent',
-                    toolbar: { show: false },          // No toolbars
+                    toolbar: { 
+                        show: false,
+                        autoSelected: 'pan' // Enables dragging/panning by default
+                    },
+                    zoom: {
+                        enabled: true,
+                        type: 'x',
+                        autoScaleYaxis: true // Auto-scales Y-axis to visible candles on zoom/pan
+                    },
+                    panning: {
+                        enabled: true,
+                        type: 'x' // Allows horizontal timeline panning
+                    },
+                    scroller: {
+                        enabled: true
+                    },
                     sparkline: { enabled: false },
                     animations: { enabled: false }     // Zero lag layout load
                 },
@@ -1178,11 +1193,16 @@
                         wick: { useFillColor: true }
                     },
                     bar: {
-                        columnWidth: '68%' // Adjusts width of candles & volume bars to ensure a crisp 1.5px to 2px gap
+                        columnWidth: '68%', // Adjusts width of candles & volume bars to ensure a crisp 1.5px to 2px gap
+                        borderRadius: 2,    // Adds subtle rounded corners to the top of the volume bars
+                        borderRadiusApplication: 'end'
                     }
                 },
                 xaxis: {
                     type: 'category',
+                    tickPlacement: 'on',             // Required for category axis zooming/panning
+                    min: Math.max(0, seriesData.length - 40), // Zooms into the last 40 data points initially (optimized for 120-day horizon)
+                    max: seriesData.length,          // Ensures the latest candle is fully visible on load without cropping
                     labels: { show: false },          // Hides the overlapping angled dates
                     axisBorder: { show: false },
                     axisTicks: { show: false },
@@ -1201,7 +1221,7 @@
                         seriesName: 'Volume',
                         show: false,
                         min: 0,
-                        max: function(max) { return max * 2.8; } // Taller volume bars occupying the bottom ~35% height
+                        max: function(max) { return max * 3.0; } // Volume bars occupy up to 33% height of the chart floor
                     }
                 ],
                 grid: {
@@ -1219,6 +1239,42 @@
             var chart = new ApexCharts(container, options);
             chart.render();
             activeCharts[ticker] = chart;
+
+            // Show the static zoom overlay
+            const overlay = document.getElementById(`zoom-overlay-${ticker}`);
+            if (overlay) overlay.classList.remove('hidden');
+        };
+
+        window.zoomInteractiveChart = function(ticker, direction) {
+            const chart = activeCharts[ticker];
+            if (!chart) return;
+
+            let currentMin = chart.w.globals.minX;
+            let currentMax = chart.w.globals.maxX;
+            const totalDataPoints = chart.w.globals.dataPoints;
+
+            // Fallbacks for initial bounds before user interaction
+            if (currentMin === undefined || currentMin === null) {
+                currentMin = Math.max(0, totalDataPoints - 40);
+            }
+            if (currentMax === undefined || currentMax === null) {
+                currentMax = totalDataPoints;
+            }
+
+            const currentRange = currentMax - currentMin;
+            let newRange;
+
+            if (direction === 'in') {
+                newRange = Math.max(10, Math.round(currentRange * 0.7)); // Zoom in (narrow range by 30%)
+            } else {
+                newRange = Math.min(totalDataPoints, Math.round(currentRange * 1.4)); // Zoom out (expand range by 40%)
+            }
+
+            // Pivot zoom around current Max boundary to keep price action in perspective
+            const newMin = Math.max(0, currentMax - newRange);
+            const newMax = currentMax;
+
+            chart.zoomX(newMin, newMax);
         };
 
         function toggleInlineChart(ticker, buttonElement) {
@@ -1235,6 +1291,10 @@
             } else {
                 container.classList.add('hidden');
                 btnLabel.textContent = 'SHOW CHART';
+                
+                // Hide static zoom overlay
+                const overlay = document.getElementById(`zoom-overlay-${ticker}`);
+                if (overlay) overlay.classList.add('hidden');
                 
                 // Destroy chart and observer to release memory resources
                 if (activeCharts[ticker] && typeof activeCharts[ticker] === 'object') {
@@ -1363,8 +1423,14 @@
                                 </div>
                             </div>
                             
-                            <!-- Inline Chart Container -->
-                            <div id="tv-chart-container-${stock.ticker}" class="hidden mt-2 w-full h-[360px] border border-slate-200/30 dark:border-slate-800/30 rounded-xl overflow-hidden bg-slate-900/10"></div>
+                            <!-- Inline Chart Wrapper -->
+                            <div class="relative w-full">
+                                <div id="zoom-overlay-${stock.ticker}" class="hidden absolute top-2 left-2 z-[99] flex gap-1 select-none">
+                                    <button class="w-6 h-6 rounded bg-slate-900/80 hover:bg-slate-800 border border-slate-700/50 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold shadow-md transition-colors cursor-pointer" onclick="zoomInteractiveChart('${stock.ticker}', 'in')" title="Zoom In">+</button>
+                                    <button class="w-6 h-6 rounded bg-slate-900/80 hover:bg-slate-800 border border-slate-700/50 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold shadow-md transition-colors cursor-pointer" onclick="zoomInteractiveChart('${stock.ticker}', 'out')" title="Zoom Out">-</button>
+                                </div>
+                                <div id="tv-chart-container-${stock.ticker}" class="hidden mt-2 w-full h-[360px] border border-slate-200/30 dark:border-slate-800/30 rounded-xl overflow-hidden bg-slate-900/10"></div>
+                            </div>
                         </div>
                     `;
                 } else {
@@ -1388,12 +1454,18 @@
                                 </div>
                             </div>
                             
-                            <!-- Chart Area -->
-                            <div id="tv-chart-container-${stock.ticker}" class="w-full h-[320px] border-t border-slate-200/25 dark:border-slate-800/25 bg-slate-900/10 relative rounded-b-xl overflow-hidden">
-                                <!-- Placeholder that loads automatically or on-click -->
-                                <div class="absolute inset-0 flex flex-col items-center justify-center text-[10px] text-slate-500 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors select-none" onclick="loadInteractiveChart('${stock.ticker}', event)">
-                                    <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse mb-1"></div>
-                                    <span class="font-bold">CLICK TO LOAD CHART</span>
+                            <!-- Chart Area Wrapper -->
+                            <div class="w-full h-[320px] border-t border-slate-200/25 dark:border-slate-800/25 bg-slate-900/10 relative rounded-b-xl overflow-hidden">
+                                <div id="zoom-overlay-${stock.ticker}" class="hidden absolute top-2 left-2 z-[99] flex gap-1 select-none">
+                                    <button class="w-6 h-6 rounded bg-slate-900/80 hover:bg-slate-800 border border-slate-700/50 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold shadow-md transition-colors cursor-pointer" onclick="zoomInteractiveChart('${stock.ticker}', 'in')" title="Zoom In">+</button>
+                                    <button class="w-6 h-6 rounded bg-slate-900/80 hover:bg-slate-800 border border-slate-700/50 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold shadow-md transition-colors cursor-pointer" onclick="zoomInteractiveChart('${stock.ticker}', 'out')" title="Zoom Out">-</button>
+                                </div>
+                                <div id="tv-chart-container-${stock.ticker}" class="w-full h-full">
+                                    <!-- Placeholder that loads automatically or on-click -->
+                                    <div class="absolute inset-0 flex flex-col items-center justify-center text-[10px] text-slate-500 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors select-none" onclick="loadInteractiveChart('${stock.ticker}', event)">
+                                        <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse mb-1"></div>
+                                        <span class="font-bold">CLICK TO LOAD CHART</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -176,7 +176,7 @@ async def run_scan(
                     "close": round(row["Close"], 2),
                     "volume": int(row["Volume"])
                 }
-                for date, row in df.iloc[-90:].iterrows()
+                for date, row in df.iloc[-120:].iterrows()
             ]
 
             metadata = {
