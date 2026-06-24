@@ -464,6 +464,25 @@
             border-right-color: #ffffff !important;
         }
 
+        /* High-fidelity Y-axis dragging cursor selector */
+        .apexcharts-yaxis, .apexcharts-yaxis-texts-g text, .apexcharts-yaxis-label {
+            cursor: ns-resize !important;
+            pointer-events: all !important;
+        }
+
+        /* Suppress crosshair and tooltips during Y-axis drag to clear GPU rendering threads */
+        .dragging-y .apexcharts-tooltip,
+        .dragging-y .apexcharts-x-crosshairs,
+        .dragging-y .apexcharts-y-crosshairs,
+        .dragging-y .apexcharts-yaxistooltip,
+        .dragging-y .apexcharts-xcrosshairs,
+        .dragging-y .apexcharts-ycrosshairs {
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+
         /* --- Mobile Responsive Logic (< 768px) --- */
         @media (max-width: 767px) {
             header .max-w-6xl {
@@ -1451,12 +1470,330 @@
                             }
                         }
                     ]
+                },
+                legend: {
+                    show: true,
+                    position: 'top',
+                    horizontalAlign: 'left',
+                    offsetX: 6,
+                    offsetY: 4,
+                    fontSize: '10px',
+                    fontFamily: 'Inter, sans-serif',
+                    fontWeight: 600,
+                    labels: {
+                        colors: isLight ? '#475569' : '#94a3b8'
+                    },
+                    markers: {
+                        width: 8,
+                        height: 8,
+                        radius: 2,
+                        offsetX: -2
+                    }
                 }
             };
 
             var chart = new ApexCharts(container, options);
             chart.render();
             activeCharts[ticker] = chart;
+
+            // Bind mouse drag listeners to the Price Y-axis scale (TradingView-style vertical scaling)
+            let isDraggingY = false;
+            let startY = 0;
+            let initialMin = 0;
+            let initialMax = 0;
+            let lastCalculatedMin = null;
+            let lastCalculatedMax = null;
+            let animationFrameId = null;
+
+            // Variables for chart area custom panning (XY)
+            let isDraggingChart = false;
+            let startChartX = 0;
+            let startChartY = 0;
+            let initialChartMinY = 0;
+            let initialChartMaxY = 0;
+            let initialChartMinX = 0;
+            let initialChartMaxX = 0;
+
+            function onMouseMoveY(e) {
+                if (!isDraggingY) return;
+                
+                const deltaY = e.clientY - startY;
+                const containerHeight = container.clientHeight || 300;
+                
+                // Sensitivity: moving cursor vertical distance changes range factor logarithmically
+                const sensitivity = 1.5;
+                const rangeMultiplier = Math.pow(3, (deltaY / containerHeight) * sensitivity);
+                
+                const initialRange = initialMax - initialMin;
+                const midPrice = (initialMax + initialMin) / 2;
+                
+                const newRange = initialRange * rangeMultiplier;
+                const newMin = midPrice - (newRange / 2);
+                const newMax = midPrice + (newRange / 2);
+                
+                lastCalculatedMin = newMin;
+                lastCalculatedMax = newMax;
+                
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                animationFrameId = requestAnimationFrame(() => {
+                    chart.updateOptions({
+                        yaxis: [
+                            {
+                                seriesName: 'Price',
+                                opposite: true,
+                                forceNiceScale: false,
+                                min: newMin,
+                                max: newMax
+                            },
+                            {
+                                seriesName: 'Volume',
+                                show: false
+                            }
+                        ]
+                    }, false, false, false); // Make sure animate, redrawPaths is strictly false
+                });
+            }
+
+            function onMouseUpY(e) {
+                isDraggingY = false;
+                container.classList.remove('dragging-y');
+                
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                
+                window.removeEventListener('mousemove', onMouseMoveY);
+                window.removeEventListener('mouseup', onMouseUpY);
+
+                // Restore tooltips and crosshairs instantly on mouseup while preserving the final dragged price scale limits
+                const yaxisPriceConfig = {
+                    seriesName: 'Price',
+                    opposite: true,
+                    forceNiceScale: false,
+                    crosshairs: { show: true, enabled: true, tooltip: { enabled: true } },
+                    tooltip: { enabled: true }
+                };
+
+                if (lastCalculatedMin !== null && lastCalculatedMax !== null) {
+                    yaxisPriceConfig.min = lastCalculatedMin;
+                    yaxisPriceConfig.max = lastCalculatedMax;
+                }
+
+                chart.updateOptions({
+                    tooltip: { enabled: true },
+                    xaxis: { crosshairs: { show: true, enabled: true } },
+                    yaxis: [
+                        yaxisPriceConfig,
+                        {
+                            seriesName: 'Volume',
+                            show: false,
+                            min: 0,
+                            max: function(max) { return max * 3.0; }
+                        }
+                    ]
+                }, false, false, false);
+            }
+
+            function onMouseMoveChart(e) {
+                if (!isDraggingChart) return;
+                
+                const deltaX = e.clientX - startChartX;
+                const deltaY = e.clientY - startChartY;
+                const containerWidth = container.clientWidth || 600;
+                const containerHeight = container.clientHeight || 300;
+                
+                // 1. Calculate X-axis panning shift
+                const xRange = initialChartMaxX - initialChartMinX;
+                const xDelta = (deltaX / containerWidth) * xRange;
+                const newMinX = Math.max(0, initialChartMinX - xDelta);
+                const newMaxX = initialChartMaxX - xDelta;
+                
+                // 2. Calculate Y-axis panning shift (vertical scrolling/panning)
+                const priceRange = initialChartMaxY - initialChartMinY;
+                const priceDelta = (deltaY / containerHeight) * priceRange;
+                const newMinY = initialChartMinY + priceDelta;
+                const newMaxY = initialChartMaxY + priceDelta;
+                
+                lastCalculatedMin = newMinY;
+                lastCalculatedMax = newMaxY;
+                
+                if (animationFrameId) cancelAnimationFrame(animationFrameId);
+                animationFrameId = requestAnimationFrame(() => {
+                    chart.updateOptions({
+                        xaxis: {
+                            min: newMinX,
+                            max: newMaxX
+                        },
+                        yaxis: [
+                            {
+                                seriesName: 'Price',
+                                opposite: true,
+                                forceNiceScale: false,
+                                min: newMinY,
+                                max: newMaxY
+                            },
+                            {
+                                seriesName: 'Volume',
+                                show: false
+                            }
+                        ]
+                    }, false, false, false);
+                });
+            }
+
+            function onMouseUpChart(e) {
+                isDraggingChart = false;
+                container.classList.remove('dragging-y');
+                
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                    animationFrameId = null;
+                }
+                
+                window.removeEventListener('mousemove', onMouseMoveChart);
+                window.removeEventListener('mouseup', onMouseUpChart);
+
+                // Restore tooltips and crosshairs instantly on mouseup while preserving the final dragged price scale limits
+                const yaxisPriceConfig = {
+                    seriesName: 'Price',
+                    opposite: true,
+                    forceNiceScale: false,
+                    crosshairs: { show: true, enabled: true, tooltip: { enabled: true } },
+                    tooltip: { enabled: true }
+                };
+
+                if (lastCalculatedMin !== null && lastCalculatedMax !== null) {
+                    yaxisPriceConfig.min = lastCalculatedMin;
+                    yaxisPriceConfig.max = lastCalculatedMax;
+                }
+
+                chart.updateOptions({
+                    tooltip: { enabled: true },
+                    xaxis: { crosshairs: { show: true, enabled: true } },
+                    yaxis: [
+                        yaxisPriceConfig,
+                        {
+                            seriesName: 'Volume',
+                            show: false,
+                            min: 0,
+                            max: function(max) { return max * 3.0; }
+                        }
+                    ]
+                }, false, false, false);
+            }
+
+            container.addEventListener('mousedown', function(e) {
+                const rect = container.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                
+                // Active scale drag zone triggers on the rightmost 85px of the chart wrapper
+                if (clickX > (rect.width - 85)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    isDraggingY = true;
+                    startY = e.clientY;
+                    
+                    lastCalculatedMin = null;
+                    lastCalculatedMax = null;
+                    
+                    const priceYaxis = chart.w.globals.yAxisScale && chart.w.globals.yAxisScale[0];
+                    if (priceYaxis) {
+                        initialMin = priceYaxis.niceMin !== undefined ? priceYaxis.niceMin : chart.w.globals.minY;
+                        initialMax = priceYaxis.niceMax !== undefined ? priceYaxis.niceMax : chart.w.globals.maxY;
+                    } else {
+                        initialMin = chart.w.globals.minY;
+                        initialMax = chart.w.globals.maxY;
+                    }
+
+                    // Suppress tooltips and crosshairs during active drag to maximize performance
+                    container.classList.add('dragging-y');
+                    chart.updateOptions({
+                        tooltip: { enabled: false },
+                        xaxis: { crosshairs: { show: false, enabled: false } },
+                        yaxis: [
+                            {
+                                seriesName: 'Price',
+                                opposite: true,
+                                crosshairs: { show: false, enabled: false, tooltip: { enabled: false } },
+                                tooltip: { enabled: false }
+                            },
+                            {
+                                seriesName: 'Volume',
+                                show: false
+                            }
+                        ]
+                    }, false, false, false);
+                    
+                    window.addEventListener('mousemove', onMouseMoveY);
+                    window.addEventListener('mouseup', onMouseUpY);
+                } else {
+                    // Clicked on the chart plot area - custom vertical shifting/panning if manual stretch is active
+                    if (lastCalculatedMin !== null && lastCalculatedMax !== null) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        isDraggingChart = true;
+                        startChartX = e.clientX;
+                        startChartY = e.clientY;
+                        initialChartMinY = lastCalculatedMin;
+                        initialChartMaxY = lastCalculatedMax;
+                        initialChartMinX = chart.w.globals.minX;
+                        initialChartMaxX = chart.w.globals.maxX;
+
+                        // Suppress tooltips and crosshairs during active shift/drag to maximize performance
+                        container.classList.add('dragging-y');
+                        chart.updateOptions({
+                            tooltip: { enabled: false },
+                            xaxis: { crosshairs: { show: false, enabled: false } },
+                            yaxis: [
+                                {
+                                    seriesName: 'Price',
+                                    opposite: true,
+                                    crosshairs: { show: false, enabled: false, tooltip: { enabled: false } },
+                                    tooltip: { enabled: false }
+                                },
+                                {
+                                    seriesName: 'Volume',
+                                    show: false
+                                }
+                            ]
+                        }, false, false, false);
+
+                        window.addEventListener('mousemove', onMouseMoveChart);
+                        window.addEventListener('mouseup', onMouseUpChart);
+                    }
+                }
+            });
+
+            container.addEventListener('dblclick', function(e) {
+                // Reset custom scale stretching/panning and revert to nice scale
+                lastCalculatedMin = null;
+                lastCalculatedMax = null;
+                
+                chart.updateOptions({
+                    xaxis: {
+                        min: 0,
+                        max: chart.w.globals.dataPoints
+                    },
+                    yaxis: [
+                        {
+                            seriesName: 'Price',
+                            opposite: true,
+                            forceNiceScale: true,
+                            min: undefined,
+                            max: undefined,
+                            crosshairs: { show: true, enabled: true, tooltip: { enabled: true } },
+                            tooltip: { enabled: true }
+                        },
+                        {
+                            seriesName: 'Volume',
+                            show: false,
+                            min: 0,
+                            max: function(max) { return max * 3.0; }
+                        }
+                    ]
+                }, false, false, false);
+            });
 
             // Show the static zoom overlay
             const overlay = document.getElementById(`zoom-overlay-${ticker}`);
