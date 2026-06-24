@@ -306,11 +306,17 @@
             border-color: rgba(226, 232, 240, 0.8); /* slate-200/80 */
         }
 
-        /* --- Live Signals Cards --- */
+        /* --- Live Signals Cards (GPU Accelerated) --- */
+        #signals-container {
+            will-change: transform;
+            transform: translate3d(0,0,0);
+        }
         .card-anim { 
             background-color: var(--surface-color) !important;
             cursor: pointer; 
             border: 1px solid var(--border-color);
+            will-change: transform;
+            transform: translate3d(0,0,0);
         }
         .card-anim:hover { 
             transform: translateY(-2px);
@@ -424,6 +430,40 @@
             box-shadow: 0 0 10px rgba(5, 150, 105, 0.6);
         }
 
+        /* Custom Y-Axis Tooltip Styling for Contrast (Global) */
+        .apexcharts-yaxistooltip {
+            background: #090d16 !important;
+            border: 1.5px solid #3b82f6 !important; /* Premium dark blue border for distinction */
+            color: #3b82f6 !important; /* Blue text */
+            font-family: 'JetBrains Mono', monospace !important;
+            font-size: 9px !important;
+            font-weight: bold !important;
+            border-radius: 4px !important;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7) !important;
+        }
+        body.light-theme .apexcharts-yaxistooltip {
+            background: #ffffff !important;
+            border: 1.5px solid #2563eb !important;
+            color: #2563eb !important;
+        }
+        /* Arrow border styling to match */
+        .apexcharts-yaxistooltip-right::before {
+            border-left-color: #3b82f6 !important;
+            border-right-color: #3b82f6 !important;
+        }
+        .apexcharts-yaxistooltip-right::after {
+            border-left-color: #090d16 !important;
+            border-right-color: #090d16 !important;
+        }
+        body.light-theme .apexcharts-yaxistooltip-right::before {
+            border-left-color: #2563eb !important;
+            border-right-color: #2563eb !important;
+        }
+        body.light-theme .apexcharts-yaxistooltip-right::after {
+            border-left-color: #ffffff !important;
+            border-right-color: #ffffff !important;
+        }
+
         /* --- Mobile Responsive Logic (< 768px) --- */
         @media (max-width: 767px) {
             header .max-w-6xl {
@@ -496,7 +536,7 @@
 
     <!-- Header -->
     <header class="fixed top-0 left-0 right-0 h-16 bg-background border-b border-border z-50 flex items-center theme-transition">
-        <div class="max-w-6xl mx-auto w-full flex items-center justify-between px-4">
+        <div class="max-w-full mx-auto w-full flex items-center justify-between px-2 md:px-4">
             <div class="flex items-center gap-3">
                 <div class="h-8 w-8 text-slate-100 flex items-center justify-center">
                     <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-full w-full">
@@ -540,7 +580,7 @@
     </header>
 
     <!-- Main structural layout container -->
-    <div class="max-w-6xl mx-auto px-4 pt-16 pb-32 md:py-24">
+    <div class="max-w-full mx-auto px-2 md:px-4 pt-16 pb-32 md:py-24">
         
         <!-- Hero Section (Tactical Pod) -->
         <div class="mb-12 p-8 rounded-3xl border border-[#10b98122] bg-slate-950/60 backdrop-blur-xl max-w-[500px] mx-auto text-center relative overflow-hidden shadow-2xl tactical-card">
@@ -829,6 +869,16 @@
         let activeViewMode = 'list';
         let activeCharts = {};
 
+        // Debounce modifier to throttle high-frequency events and preserve main thread
+        function debounce(func, wait) {
+            let timeout;
+            return function(...args) {
+                const context = this;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), wait);
+            };
+        }
+
         // Setup the Lazy-Load Intersection Observer for Maze Charts
         const lazyLoadObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -915,8 +965,8 @@
             }
         });
 
-        // --- Client-side Search Filter ---
-        tickerSearch.addEventListener('input', (e) => {
+        // --- Client-side Search Filter (Debounced) ---
+        tickerSearch.addEventListener('input', debounce((e) => {
             const query = e.target.value.toUpperCase();
             const cards = signalsContainer.querySelectorAll('.card-anim');
             
@@ -928,7 +978,7 @@
                     card.style.display = 'none';
                 }
             });
-        });
+        }, 150));
 
         // --- Theme Logic ---
         function updateFavicon(isLight) {
@@ -1116,8 +1166,17 @@
 
             const isMobile = window.innerWidth < 768;
 
-            if (activeCharts[ticker]) {
-                try { activeCharts[ticker].destroy(); } catch(e){}
+            // Strict garbage collection: destroy previous instance if it exists to release memory heap
+            if (activeCharts && activeCharts[ticker]) {
+                if (typeof activeCharts[ticker].destroy === 'function') {
+                    try {
+                        activeCharts[ticker].destroy();
+                    } catch (e) {
+                        console.warn("Failed to destroy chart instance:", e);
+                    }
+                }
+                activeCharts[ticker] = null;
+                delete activeCharts[ticker];
             }
             container.innerHTML = '';
 
@@ -1169,9 +1228,10 @@
                         autoSelected: 'pan' // Enables dragging/panning by default
                     },
                     zoom: {
-                        enabled: true,
+                        enabled: false,
                         type: 'x',
-                        autoScaleYaxis: true // Auto-scales Y-axis to visible candles on zoom/pan
+                        autoScaleYaxis: true, // Auto-scales Y-axis to visible candles on zoom/pan
+                        mouseWheelZoom: false // Disable mouse-wheel scrolling zoom
                     },
                     panning: {
                         enabled: true,
@@ -1181,7 +1241,89 @@
                         enabled: true
                     },
                     sparkline: { enabled: false },
-                    animations: { enabled: false }     // Zero lag layout load
+                    animations: { enabled: false },     // Zero lag layout load
+                    events: {
+                        zoomed: function(chartContext, { xaxis, yaxis }) {
+                            if (chartContext._isUpdatingYaxis) return;
+                            chartContext._isUpdatingYaxis = true;
+                            chartContext.updateOptions({
+                                yaxis: [
+                                    {
+                                        seriesName: 'Price',
+                                        opposite: true,
+                                        forceNiceScale: true,
+                                        labels: { 
+                                            style: { colors: isLight ? '#475569' : '#94a3b8', fontSize: '9px' },
+                                            offsetX: -4
+                                        },
+                                        crosshairs: {
+                                            show: true,
+                                            enabled: true,
+                                            position: 'back',
+                                            stroke: {
+                                                color: '#64748b',
+                                                width: 1,
+                                                dashArray: 3
+                                            },
+                                            tooltip: {
+                                                enabled: true
+                                            }
+                                        },
+                                        tooltip: {
+                                            enabled: true
+                                        }
+                                    },
+                                    {
+                                        seriesName: 'Volume',
+                                        show: false,
+                                        min: 0,
+                                        max: function(max) { return max * 3.0; }
+                                    }
+                                ]
+                            }, false, false, false);
+                            chartContext._isUpdatingYaxis = false;
+                        },
+                        scrolled: function(chartContext, { xaxis }) {
+                            if (chartContext._isUpdatingYaxis) return;
+                            chartContext._isUpdatingYaxis = true;
+                            chartContext.updateOptions({
+                                yaxis: [
+                                    {
+                                        seriesName: 'Price',
+                                        opposite: true,
+                                        forceNiceScale: true,
+                                        labels: { 
+                                            style: { colors: isLight ? '#475569' : '#94a3b8', fontSize: '9px' },
+                                            offsetX: -4
+                                        },
+                                        crosshairs: {
+                                            show: true,
+                                            enabled: true,
+                                            position: 'back',
+                                            stroke: {
+                                                color: '#64748b',
+                                                width: 1,
+                                                dashArray: 3
+                                            },
+                                            tooltip: {
+                                                enabled: true
+                                            }
+                                        },
+                                        tooltip: {
+                                            enabled: true
+                                        }
+                                    },
+                                    {
+                                        seriesName: 'Volume',
+                                        show: false,
+                                        min: 0,
+                                        max: function(max) { return max * 3.0; }
+                                    }
+                                ]
+                            }, false, false, false);
+                            chartContext._isUpdatingYaxis = false;
+                        }
+                    }
                 },
                 stroke: {
                     width: [1.3, 0] // 1.3px border/wick for candles, 0px border for volume bars
@@ -1231,15 +1373,15 @@
                 xaxis: {
                     type: 'category',
                     tickPlacement: 'on',             // Required for category axis zooming/panning
-                    min: Math.max(0, seriesData.length - 40), // Zooms into the last 40 data points initially (optimized for 120-day horizon)
+                    min: 0, // Displays all 120 data points initially by default
                     max: seriesData.length,          // Ensures the latest candle is fully visible on load without cropping
                     labels: { show: false },          // Hides the overlapping angled dates
                     axisBorder: { show: false },
                     axisTicks: { show: false },
                     tooltip: { enabled: false },
                     crosshairs: {
-                        show: !isMobile,
-                        enabled: !isMobile,
+                        show: true,
+                        enabled: true,
                         stroke: {
                             color: '#64748b',
                             width: 1,
@@ -1251,13 +1393,14 @@
                     {
                         seriesName: 'Price',
                         opposite: true,
+                        forceNiceScale: true,
                         labels: { 
                             style: { colors: isLight ? '#475569' : '#94a3b8', fontSize: '9px' },
                             offsetX: -4 // Nudges numeric labels slightly for edge clearance
                         },
                         crosshairs: {
-                            show: !isMobile,
-                            enabled: !isMobile,
+                            show: true,
+                            enabled: true,
                             position: 'back',
                             stroke: {
                                 color: '#64748b',
@@ -1265,11 +1408,11 @@
                                 dashArray: 3
                             },
                             tooltip: {
-                                enabled: !isMobile
+                                enabled: true
                             }
                         },
                         tooltip: {
-                            enabled: !isMobile
+                            enabled: true
                         }
                     },
                     {
@@ -1455,9 +1598,9 @@
                 const card = document.createElement('div');
                 card.setAttribute('data-ticker', stock.ticker);
                 if (activeViewMode === 'list') {
-                    card.className = 'rounded-lg border border-slate-200/60 dark:border-slate-800/80 bg-white/80 dark:bg-[#0b0f19]/90 shadow-sm hover:border-emerald-500/80 hover:shadow-[0_4px_12px_rgba(5,150,105,0.04)] dark:hover:border-emerald-500/60 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.08)] hover:-translate-y-[0.5px] transition-all duration-200 card-anim relative overflow-hidden group grid grid-cols-12 items-center px-4 py-1.5 gap-2 text-[11px] cursor-pointer select-none';
+                    card.className = 'rounded-lg border border-slate-200/60 dark:border-slate-800/80 bg-white/80 dark:bg-[#0b0f19]/90 shadow-sm hover:border-emerald-500/80 hover:shadow-[0_4px_12px_rgba(5,150,105,0.04)] dark:hover:border-emerald-500/60 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.08)] hover:-translate-y-[0.5px] transition-all duration-200 card-anim relative overflow-hidden group grid grid-cols-12 items-center px-4 py-1.5 gap-2 text-[11px] cursor-pointer select-none transform-gpu';
                 } else {
-                    card.className = 'rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/80 dark:bg-[#0b0f19]/90 shadow-md hover:border-emerald-500/80 hover:shadow-[0_8px_30px_rgba(5,150,105,0.06)] dark:hover:border-emerald-500/60 dark:hover:shadow-[0_0_25px_rgba(16,185,129,0.12)] hover:-translate-y-[1px] transition-all duration-300 card-anim relative overflow-hidden group p-0';
+                    card.className = 'rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/80 dark:bg-[#0b0f19]/90 shadow-md hover:border-emerald-500/80 hover:shadow-[0_8px_30px_rgba(5,150,105,0.06)] dark:hover:border-emerald-500/60 dark:hover:shadow-[0_0_25px_rgba(16,185,129,0.12)] hover:-translate-y-[1px] transition-all duration-300 card-anim relative overflow-hidden group p-0 transform-gpu';
                 }
                 
                 // --- Apply active search filter immediately ---
@@ -1512,9 +1655,9 @@
 
                         <!-- Inline Chart Wrapper -->
                         <div class="col-span-12 relative w-full">
-                            <div id="zoom-overlay-${stock.ticker}" class="hidden absolute top-2 left-2 z-[99] flex gap-1 select-none">
-                                <button class="w-6 h-6 rounded bg-slate-900/80 hover:bg-slate-800 border border-slate-700/50 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold shadow-md transition-colors cursor-pointer" onclick="zoomInteractiveChart('${stock.ticker}', 'in')" title="Zoom In">+</button>
-                                <button class="w-6 h-6 rounded bg-slate-900/80 hover:bg-slate-800 border border-slate-700/50 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold shadow-md transition-colors cursor-pointer" onclick="zoomInteractiveChart('${stock.ticker}', 'out')" title="Zoom Out">-</button>
+                            <div id="zoom-overlay-${stock.ticker}" class="hidden absolute bottom-3 left-1/2 -translate-x-1/2 z-[99] flex gap-2 select-none">
+                                <button class="w-7 h-7 rounded-md bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 hover:border-emerald-500/50 hover:text-emerald-400 text-slate-300 flex items-center justify-center text-base font-bold shadow-lg transition-all duration-200 active:scale-90 cursor-pointer font-mono hover:shadow-[0_0_8px_rgba(16,185,129,0.3)]" onclick="zoomInteractiveChart('${stock.ticker}', 'in')" title="Zoom In">+</button>
+                                <button class="w-7 h-7 rounded-md bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 hover:border-emerald-500/50 hover:text-emerald-400 text-slate-300 flex items-center justify-center text-base font-bold shadow-lg transition-all duration-200 active:scale-90 cursor-pointer font-mono hover:shadow-[0_0_8px_rgba(16,185,129,0.3)]" onclick="zoomInteractiveChart('${stock.ticker}', 'out')" title="Zoom Out">-</button>
                             </div>
                             <div id="tv-chart-container-${stock.ticker}" class="hidden mt-2 w-full h-[360px] border border-slate-200/30 dark:border-slate-800/30 rounded-xl overflow-hidden bg-slate-900/10"></div>
                         </div>
@@ -1534,17 +1677,18 @@
                                         <span class="text-slate-600 dark:text-slate-400">₹${stock.price.toLocaleString('en-IN')}</span>
                                         <span class="${stock.change >= 0 ? 'signal-up' : 'signal-down'}">(${stock.change >= 0 ? '+' : ''}${stock.change}%)</span>
                                     </div>
-                                </div>
-                                <div class="px-1.5 py-0.5 text-[9px] font-mono bg-slate-100 dark:bg-slate-800/50 border border-slate-200/40 dark:border-slate-700/50 rounded text-slate-600 dark:text-slate-400 font-bold shrink-0">
-                                    Vol: ${stock.vol_multiple}x
+                                    <div class="flex items-center gap-1 font-mono text-[9px] px-1.5 py-0.5 rounded font-bold border ${stock.vol_multiple >= 2.0 ? 'bg-[#00ff9d]/10 text-[#00ff9d] border-[#00ff9d]/30 shadow-[0_0_10px_rgba(0,255,157,0.15)]' : 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20'}">
+                                        <span>Vol: ${formatVolume(rawVolume)}</span>
+                                        <span>(${stock.vol_multiple}x)</span>
+                                    </div>
                                 </div>
                             </div>
                             
                             <!-- Chart Area Wrapper -->
                             <div class="w-full h-[320px] border-t border-slate-200/25 dark:border-slate-800/25 bg-slate-900/10 relative rounded-b-xl overflow-hidden">
-                                <div id="zoom-overlay-${stock.ticker}" class="hidden absolute top-2 left-2 z-[99] flex gap-1 select-none">
-                                    <button class="w-6 h-6 rounded bg-slate-900/80 hover:bg-slate-800 border border-slate-700/50 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold shadow-md transition-colors cursor-pointer" onclick="zoomInteractiveChart('${stock.ticker}', 'in')" title="Zoom In">+</button>
-                                    <button class="w-6 h-6 rounded bg-slate-900/80 hover:bg-slate-800 border border-slate-700/50 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold shadow-md transition-colors cursor-pointer" onclick="zoomInteractiveChart('${stock.ticker}', 'out')" title="Zoom Out">-</button>
+                                <div id="zoom-overlay-${stock.ticker}" class="hidden absolute bottom-3 left-1/2 -translate-x-1/2 z-[99] flex gap-2 select-none">
+                                    <button class="w-7 h-7 rounded-md bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 hover:border-emerald-500/50 hover:text-emerald-400 text-slate-300 flex items-center justify-center text-base font-bold shadow-lg transition-all duration-200 active:scale-90 cursor-pointer font-mono hover:shadow-[0_0_8px_rgba(16,185,129,0.3)]" onclick="zoomInteractiveChart('${stock.ticker}', 'in')" title="Zoom In">+</button>
+                                    <button class="w-7 h-7 rounded-md bg-slate-900/90 hover:bg-slate-800 border border-slate-700/60 hover:border-emerald-500/50 hover:text-emerald-400 text-slate-300 flex items-center justify-center text-base font-bold shadow-lg transition-all duration-200 active:scale-90 cursor-pointer font-mono hover:shadow-[0_0_8px_rgba(16,185,129,0.3)]" onclick="zoomInteractiveChart('${stock.ticker}', 'out')" title="Zoom Out">-</button>
                                 </div>
                                 <div id="tv-chart-container-${stock.ticker}" class="w-full h-full">
                                     <!-- Placeholder that loads automatically or on-click -->
@@ -1647,6 +1791,18 @@
         strategyScannerBtn.addEventListener('click', () => updateStrategy('current'));
         strategyMomentumOpenBtn.addEventListener('click', () => updateStrategy('momentum_open_30'));
         universeSelector.addEventListener('change', () => triggerScan());
+
+        // Debounced Window Resize event listener to handle viewport changes smoothly
+        window.addEventListener('resize', debounce(() => {
+            // Viewport adjustments like adjusting active charts spacing/redraw
+            Object.keys(activeCharts).forEach(ticker => {
+                const chart = activeCharts[ticker];
+                if (chart && typeof chart.updateOptions === 'function') {
+                    // Update options to force layout redraw cleanly without blocking main thread
+                    chart.updateOptions({}, false, false, false);
+                }
+            });
+        }, 150));
     </script>
     <!-- Global card click tab-opening intercepted handler removed in favor of inline show/hide buttons and grid views -->
 </body>
