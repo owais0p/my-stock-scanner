@@ -1380,7 +1380,7 @@
                 const card = document.createElement('div');
                 card.setAttribute('data-ticker', stock.ticker);
                 if (activeViewMode === 'list') {
-                    card.className = 'rounded-lg border border-slate-200/60 dark:border-slate-800/80 bg-white/80 dark:bg-[#0b0f19]/90 shadow-sm hover:border-emerald-500/80 hover:shadow-[0_4px_12px_rgba(5,150,105,0.04)] dark:hover:border-emerald-500/60 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.08)] hover:-translate-y-[0.5px] transition-all duration-200 card-anim relative overflow-hidden group grid grid-cols-12 items-center px-4 py-1.5 gap-2 text-[11px]';
+                    card.className = 'rounded-lg border border-slate-200/60 dark:border-slate-800/80 bg-white/80 dark:bg-[#0b0f19]/90 shadow-sm hover:border-emerald-500/80 hover:shadow-[0_4px_12px_rgba(5,150,105,0.04)] dark:hover:border-emerald-500/60 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.08)] hover:-translate-y-[0.5px] transition-all duration-200 card-anim relative overflow-hidden group grid grid-cols-12 items-center px-4 py-1.5 gap-2 text-[11px] cursor-pointer select-none';
                 } else {
                     card.className = 'rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/80 dark:bg-[#0b0f19]/90 shadow-md hover:border-emerald-500/80 hover:shadow-[0_8px_30px_rgba(5,150,105,0.06)] dark:hover:border-emerald-500/60 dark:hover:shadow-[0_0_25px_rgba(16,185,129,0.12)] hover:-translate-y-[1px] transition-all duration-300 card-anim relative overflow-hidden group p-0';
                 }
@@ -1483,6 +1483,26 @@
                     `;
                 }
 
+                // Bind root level and inner button click events for list mode
+                if (activeViewMode === 'list') {
+                    card.onclick = (event) => {
+                        // Guard: do not open TradingView link if clicking inside the chart container, zoom overlay controls, or link anchor tags
+                        if (event.target.closest('[id^="tv-chart-container-"]') || event.target.closest('[id^="zoom-overlay-"]') || event.target.closest('a')) {
+                            return;
+                        }
+                        window.open('https://www.tradingview.com/chart/?symbol=NSE:' + stock.ticker, '_blank');
+                    };
+
+                    const toggleBtn = card.querySelector('.toggle-chart-btn');
+                    if (toggleBtn) {
+                        toggleBtn.onclick = (event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            toggleInlineChart(stock.ticker, toggleBtn);
+                        };
+                    }
+                }
+
                 signalsContainer.appendChild(card);
 
                 // Lazy-load interactive charts in Maze mode when scrolled into viewport
@@ -1510,22 +1530,7 @@
                 return;
             }
 
-            // Click on list card (can toggle chart inline if clicked)
-            if (activeViewMode === 'list') {
-                const card = event.target.closest('.card-anim');
-                if (card) {
-                    // Guard: do not trigger toggle if clicking inside the chart container or zoom overlay controls
-                    if (event.target.closest('[id^="tv-chart-container-"]') || event.target.closest('[id^="zoom-overlay-"]')) {
-                        return;
-                    }
-                    const btn = card.querySelector('.toggle-chart-btn');
-                    if (btn) {
-                        event.preventDefault();
-                        const ticker = btn.getAttribute('data-ticker');
-                        toggleInlineChart(ticker, btn);
-                    }
-                }
-            }
+            // Card level redirection is handled inline during card creation
         });
 
         function exportToCSV() {
