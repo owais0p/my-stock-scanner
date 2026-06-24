@@ -829,6 +829,21 @@
         let activeViewMode = 'list';
         let activeCharts = {};
 
+        // Setup the Lazy-Load Intersection Observer for Maze Charts
+        const lazyLoadObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const ticker = entry.target.getAttribute('data-ticker');
+                    if (ticker) {
+                        window.loadInteractiveChart(ticker);
+                        lazyLoadObserver.unobserve(entry.target);
+                    }
+                }
+            });
+        }, {
+            rootMargin: '100px 0px' // Start loading slightly before rolling into viewport
+        });
+
         const viewModeListBtn = document.getElementById('view-mode-list');
         const viewModeMazeBtn = document.getElementById('view-mode-maze');
 
@@ -1107,18 +1122,24 @@
             const stockData = lastScanData.find(s => s.ticker === ticker);
             if (!stockData || !stockData.ohlcv) return;
 
+            const isLight = document.body.classList.contains('light-theme');
+
             // Convert 90 days data to category format to avoid holiday/weekend gaps
             const seriesData = stockData.ohlcv.map(row => ({
                 x: row.time, // Use string date directly as category label
                 y: [row.open, row.high, row.low, row.close]
             }));
 
-            const volumeData = stockData.ohlcv.map(row => ({
-                x: row.time,
-                y: row.volume
-            }));
-
-            const isLight = document.body.classList.contains('light-theme');
+            const volumeData = stockData.ohlcv.map(row => {
+                const isUp = row.close >= row.open;
+                return {
+                    x: row.time,
+                    y: row.volume,
+                    fillColor: isUp
+                        ? (isLight ? 'rgba(5, 150, 105, 0.35)' : 'rgba(16, 185, 129, 0.35)') // Translucent green for up days
+                        : (isLight ? 'rgba(220, 38, 38, 0.35)' : 'rgba(239, 68, 68, 0.35)')  // Translucent red/rose for down days
+                };
+            });
 
             var options = {
                 series: [
@@ -1157,14 +1178,7 @@
                         wick: { useFillColor: true }
                     },
                     bar: {
-                        columnWidth: '68%', // Adjusts width of candles & volume bars to ensure a crisp 1.5px to 2px gap
-                        colors: {
-                            ranges: [{
-                                from: 0,
-                                to: 1000000000,
-                                color: isLight ? 'rgba(5, 150, 105, 0.3)' : 'rgba(16, 185, 129, 0.25)' // Clean matching green accent floor
-                            }]
-                        }
+                        columnWidth: '68%' // Adjusts width of candles & volume bars to ensure a crisp 1.5px to 2px gap
                     }
                 },
                 xaxis: {
@@ -1178,22 +1192,25 @@
                     {
                         seriesName: 'Price',
                         opposite: true,
-                        labels: { style: { colors: isLight ? '#475569' : '#94a3b8', fontSize: '9px' } }
+                        labels: { 
+                            style: { colors: isLight ? '#475569' : '#94a3b8', fontSize: '9px' },
+                            offsetX: -4 // Nudges numeric labels slightly for edge clearance
+                        }
                     },
                     {
                         seriesName: 'Volume',
                         show: false,
                         min: 0,
-                        max: function(max) { return max * 4.0; } // Pins volume bars to the bottom (takes up at most 25% height)
+                        max: function(max) { return max * 2.8; } // Taller volume bars occupying the bottom ~35% height
                     }
                 ],
                 grid: {
                     borderColor: isLight ? 'rgba(226, 232, 240, 0.4)' : 'rgba(30, 41, 59, 0.3)',
                     padding: {
                         left: 4,
-                        right: 10,
+                        right: 0, // Fits flush to the card's right border
                         top: 10,
-                        bottom: 5
+                        bottom: 0 // Fits flush to the bottom edge of the card
                     }
                 },
                 tooltip: { enabled: true, theme: isLight ? 'light' : 'dark' }
@@ -1270,6 +1287,11 @@
             });
             activeCharts = {};
 
+            // Disconnect old observed elements to prevent memory leaks
+            if (lazyLoadObserver) {
+                lazyLoadObserver.disconnect();
+            }
+
             // --- Dynamic UI Parameter Label Hook ---
             const emaFastLabel = document.getElementById('ema_fast').value;
             const emaSlowLabel = document.getElementById('ema_slow').value;
@@ -1281,7 +1303,8 @@
                 let label2 = `${emaSlowLabel} EMA`;
 
                 const card = document.createElement('div');
-                card.className = 'px-2 py-3 rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/80 dark:bg-[#0b0f19]/90 shadow-md hover:border-emerald-500/80 hover:shadow-[0_8px_30px_rgba(5,150,105,0.06)] dark:hover:border-emerald-500/60 dark:hover:shadow-[0_0_25px_rgba(16,185,129,0.12)] hover:-translate-y-[1px] transition-all duration-300 card-anim relative overflow-hidden group';
+                card.setAttribute('data-ticker', stock.ticker);
+                card.className = 'rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/80 dark:bg-[#0b0f19]/90 shadow-md hover:border-emerald-500/80 hover:shadow-[0_8px_30px_rgba(5,150,105,0.06)] dark:hover:border-emerald-500/60 dark:hover:shadow-[0_0_25px_rgba(16,185,129,0.12)] hover:-translate-y-[1px] transition-all duration-300 card-anim relative overflow-hidden group p-0';
                 
                 // --- Apply active search filter immediately ---
                 if (searchQuery && !stock.ticker.toUpperCase().includes(searchQuery)) {
@@ -1290,7 +1313,7 @@
 
                 if (activeViewMode === 'list') {
                     card.innerHTML = `
-                        <div class="flex flex-col">
+                        <div class="flex flex-col p-4">
                             <div class="flex justify-between items-start mb-2">
                                 <div>
                                     <h3 class="text-lg font-bold tracking-wide text-slate-800 dark:text-slate-100 uppercase flex items-center gap-1.5">
@@ -1341,13 +1364,13 @@
                             </div>
                             
                             <!-- Inline Chart Container -->
-                            <div id="tv-chart-container-${stock.ticker}" class="hidden mt-2 w-full h-[360px] border-[0.5px] border-slate-200/25 dark:border-slate-800/25 rounded-xl overflow-hidden bg-slate-900/10"></div>
+                            <div id="tv-chart-container-${stock.ticker}" class="hidden mt-2 w-full h-[360px] border border-slate-200/30 dark:border-slate-800/30 rounded-xl overflow-hidden bg-slate-900/10"></div>
                         </div>
                     `;
                 } else {
                     card.innerHTML = `
                         <div class="flex flex-col h-full justify-between">
-                            <div class="flex items-center justify-between gap-1 mb-2">
+                            <div class="flex items-center justify-between gap-1 p-3 pb-2">
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <h3 class="text-sm font-bold tracking-wide text-slate-800 dark:text-slate-100 uppercase flex items-center gap-1">
                                         ${stock.ticker}
@@ -1366,7 +1389,7 @@
                             </div>
                             
                             <!-- Chart Area -->
-                            <div id="tv-chart-container-${stock.ticker}" class="w-full h-[320px] border-[0.5px] border-slate-200/25 dark:border-slate-800/25 rounded-lg overflow-hidden bg-slate-900/10 mb-1 relative">
+                            <div id="tv-chart-container-${stock.ticker}" class="w-full h-[320px] border-t border-slate-200/25 dark:border-slate-800/25 bg-slate-900/10 relative rounded-b-xl overflow-hidden">
                                 <!-- Placeholder that loads automatically or on-click -->
                                 <div class="absolute inset-0 flex flex-col items-center justify-center text-[10px] text-slate-500 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors select-none" onclick="loadInteractiveChart('${stock.ticker}', event)">
                                     <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse mb-1"></div>
@@ -1378,24 +1401,12 @@
                 }
 
                 signalsContainer.appendChild(card);
-            });
 
-            // Post-rendering actions for Maze mode: automatically load the first 6 charts
-            if (activeViewMode === 'maze') {
-                const autoLoadLimit = 6;
-                let autoloaded = 0;
-                sortedStocks.forEach((stock, index) => {
-                    if (searchQuery && !stock.ticker.toUpperCase().includes(searchQuery)) {
-                        return;
-                    }
-                    if (autoloaded < autoLoadLimit) {
-                        autoloaded++;
-                        setTimeout(() => {
-                            loadInteractiveChart(stock.ticker);
-                        }, 100 * autoloaded);
-                    }
-                });
-            }
+                // Lazy-load interactive charts in Maze mode when scrolled into viewport
+                if (activeViewMode === 'maze') {
+                    lazyLoadObserver.observe(card);
+                }
+            });
         }
 
         // Use event delegation for signal container actions
