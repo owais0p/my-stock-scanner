@@ -166,6 +166,18 @@ async def run_scan(
                 {"time": date.strftime("%Y-%m-%d"), "value": round(val, 2)}
                 for date, val in close.iloc[-30:].items()
             ]
+            
+            ohlcv_data = [
+                {
+                    "time": date.strftime("%Y-%m-%d"),
+                    "open": round(row["Open"], 2),
+                    "high": round(row["High"], 2),
+                    "low": round(row["Low"], 2),
+                    "close": round(row["Close"], 2),
+                    "volume": int(row["Volume"])
+                }
+                for date, row in df.iloc[-90:].iterrows()
+            ]
 
             metadata = {
                 "ticker": ticker.replace(".NS", ""),
@@ -176,7 +188,8 @@ async def run_scan(
                 "ema20": round(l_ema_s, 2),
                 "vol_multiple": vol_multiple,
                 "setup": setup_label,
-                "history": history_prices
+                "history": history_prices,
+                "ohlcv": ohlcv_data
             }
             results.append(metadata)
                 
