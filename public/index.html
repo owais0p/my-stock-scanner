@@ -1114,6 +1114,8 @@
             const container = document.getElementById(containerId);
             if (!container) return;
 
+            const isMobile = window.innerWidth < 768;
+
             if (activeCharts[ticker]) {
                 try { activeCharts[ticker].destroy(); } catch(e){}
             }
@@ -1140,6 +1142,10 @@
                         : (isLight ? 'rgba(220, 38, 38, 0.35)' : 'rgba(239, 68, 68, 0.35)')  // Translucent red/rose for down days
                 };
             });
+
+            const lastCandle = seriesData[seriesData.length - 1];
+            const lastClosePrice = lastCandle ? lastCandle.y[3] : 0;
+            const cmpColor = stockData.change >= 0 ? '#10B981' : '#ef5350';
 
             var options = {
                 series: [
@@ -1198,6 +1204,30 @@
                         borderRadiusApplication: 'end'
                     }
                 },
+                annotations: {
+                    yaxis: [
+                        {
+                            y: lastClosePrice,
+                            borderColor: cmpColor,
+                            strokeDashArray: 4,
+                            borderWidth: 1.5,
+                            label: {
+                                show: true,
+                                text: 'CMP: ₹' + lastClosePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                position: 'right',
+                                textAnchor: 'start',
+                                offsetX: 5,
+                                style: {
+                                    color: '#fff',
+                                    background: cmpColor,
+                                    fontSize: '9px',
+                                    fontWeight: 'bold',
+                                    fontFamily: 'JetBrains Mono'
+                                }
+                            }
+                        }
+                    ]
+                },
                 xaxis: {
                     type: 'category',
                     tickPlacement: 'on',             // Required for category axis zooming/panning
@@ -1206,7 +1236,16 @@
                     labels: { show: false },          // Hides the overlapping angled dates
                     axisBorder: { show: false },
                     axisTicks: { show: false },
-                    tooltip: { enabled: false }
+                    tooltip: { enabled: false },
+                    crosshairs: {
+                        show: !isMobile,
+                        enabled: !isMobile,
+                        stroke: {
+                            color: '#64748b',
+                            width: 1,
+                            dashArray: 3
+                        }
+                    }
                 },
                 yaxis: [
                     {
@@ -1215,6 +1254,22 @@
                         labels: { 
                             style: { colors: isLight ? '#475569' : '#94a3b8', fontSize: '9px' },
                             offsetX: -4 // Nudges numeric labels slightly for edge clearance
+                        },
+                        crosshairs: {
+                            show: !isMobile,
+                            enabled: !isMobile,
+                            position: 'back',
+                            stroke: {
+                                color: '#64748b',
+                                width: 1,
+                                dashArray: 3
+                            },
+                            tooltip: {
+                                enabled: !isMobile
+                            }
+                        },
+                        tooltip: {
+                            enabled: !isMobile
                         }
                     },
                     {
@@ -1228,12 +1283,32 @@
                     borderColor: isLight ? 'rgba(226, 232, 240, 0.4)' : 'rgba(30, 41, 59, 0.3)',
                     padding: {
                         left: 4,
-                        right: 0, // Fits flush to the card's right border
+                        right: 80, // Safe margin for Y-axis labels and annotations
                         top: 10,
                         bottom: 0 // Fits flush to the bottom edge of the card
                     }
                 },
-                tooltip: { enabled: true, theme: isLight ? 'light' : 'dark' }
+                tooltip: { 
+                    enabled: true, 
+                    theme: isLight ? 'light' : 'dark',
+                    shared: true,
+                    intersect: false,
+                    followCursor: !isMobile,
+                    y: [
+                        {
+                            // Price series (candlestick) - default format
+                        },
+                        {
+                            // Volume series
+                            formatter: function (val) {
+                                if (val >= 10000000) return (val / 10000000).toFixed(2) + ' Cr';
+                                if (val >= 100000) return (val / 100000).toFixed(2) + ' L';
+                                if (val >= 1000) return (val / 1000).toFixed(2) + ' K';
+                                return val;
+                            }
+                        }
+                    ]
+                }
             };
 
             var chart = new ApexCharts(container, options);
