@@ -56,7 +56,7 @@ This document provides a comprehensive breakdown of the engineering decisions, t
 
 ## 4. Interactive Charting & Resampling Engine
 - **Canvas Integration**: Embedded interactive ApexCharts candlestick + volume charts inside cards, supporting TradingView-style vertical scaling and right Y-axis scale price badges.
-- **Client-Side Timeframe Selector**: Integrates client-side weekly (Monday-Sunday) and monthly candle resampling. When the user switches timeframes (1D / 1W / 1M), daily data is dynamically aggregated (Monday Open, Friday Close, Highest High, Lowest Low, Sum of Volume) and updated instantly using `chart.updateSeries` with `animate: false`.
+- **Server-Side Timeframe Selector**: Integrates server-side weekly and monthly candle resampling. When the user switches timeframes (1D / 1W / 1M), the frontend triggers an async fetch call back to the backend endpoint passing the respective timeframe flag. The backend downloads a larger historical matrix (`6mo` for `1D`, `3y` for `1W`, `10y` for `1M`), groups the daily rows (using Monday-aligned weeks and Month Start-aligned months), slices it to exactly 120 candles, and updates the series instantly using `chart.updateSeries` with `animate: false`.
 - **Y-Axis Volume Scale Lock**: Automatically enforces a volume-constraining scale (`min: 0, max: function(max) { return max * 3.0; }`) when switching timeframes, keeping volume bars strictly bound to the bottom 33% height of the chart floor.
 - **Layout & Padding Optimizations**:
   - **Repositioned Legend**: Legend container floats on the top-right (`position: 'top', horizontalAlign: 'right', floating: true, offsetY: -10, offsetX: -10`) to sit inline next to timeframe switchers without claiming a dedicated horizontal row block.

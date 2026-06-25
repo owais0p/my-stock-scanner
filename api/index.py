@@ -143,10 +143,109 @@ def get_nse_universe(universe_mode: str):
         print(f"Universe Error: {e}")
         return ["RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS"]
 
+def resample_to_weekly(df: pd.DataFrame) -> list:
+    df = df.copy()
+    df.index = pd.to_datetime(df.index)
+    df['monday'] = df.index.map(lambda d: d - pd.Timedelta(days=d.weekday()))
+    grouped = df.groupby('monday').agg({
+        'Open': 'first',
+        'High': 'max',
+        'Low': 'min',
+        'Close': 'last',
+        'Volume': 'sum'
+    }).sort_index()
+    
+    ohlcv = []
+    for date, row in grouped.iterrows():
+        ohlcv.append({
+            "time": date.strftime("%Y-%m-%d"),
+            "open": round(float(row["Open"]), 2),
+            "high": round(float(row["High"]), 2),
+            "low": round(float(row["Low"]), 2),
+            "close": round(float(row["Close"]), 2),
+            "volume": int(row["Volume"])
+        })
+    return ohlcv
+
+def resample_to_monthly(df: pd.DataFrame) -> list:
+    df = df.copy()
+    df.index = pd.to_datetime(df.index)
+    df['month_start'] = df.index.map(lambda d: d.replace(day=1))
+    grouped = df.groupby('month_start').agg({
+        'Open': 'first',
+        'High': 'max',
+        'Low': 'min',
+        'Close': 'last',
+        'Volume': 'sum'
+    }).sort_index()
+    
+    ohlcv = []
+    for date, row in grouped.iterrows():
+        ohlcv.append({
+            "time": date.strftime("%Y-%m-%d"),
+            "open": round(float(row["Open"]), 2),
+            "high": round(float(row["High"]), 2),
+            "low": round(float(row["Low"]), 2),
+            "close": round(float(row["Close"]), 2),
+            "volume": int(row["Volume"])
+        })
+    return ohlcv
+
+@app.get("/api/historical/{ticker}")
+async def get_historical_ticker_route(ticker: str, timeframe: str = Query("1D")):
+    if timeframe == "1W":
+        period = "3y"
+    elif timeframe == "1M":
+        period = "10y"
+    else:
+        period = "6mo"
+        
+    yf_ticker = ticker if ticker.endswith(".NS") else f"{ticker}.NS"
+    df = yf.download(yf_ticker, period=period, progress=False)
+    
+    if df.empty:
+        return {"status": "error", "message": f"No data found for ticker {ticker}"}
+        
+    if isinstance(df.columns, pd.MultiIndex):
+        if yf_ticker in df.columns.get_level_values(1):
+            df = df.xs(yf_ticker, axis=1, level=1)
+        elif ticker in df.columns.get_level_values(1):
+            df = df.xs(ticker, axis=1, level=1)
+        else:
+            df.columns = df.columns.droplevel(1)
+            
+    df = df.dropna(subset=["Close", "Volume"])
+            
+    if timeframe == "1W":
+        ohlcv_data = resample_to_weekly(df)[-120:]
+    elif timeframe == "1M":
+        ohlcv_data = resample_to_monthly(df)[-120:]
+    else:
+        ohlcv_data = [
+            {
+                "time": date.strftime("%Y-%m-%d"),
+                "open": round(float(row["Open"]), 2),
+                "high": round(float(row["High"]), 2),
+                "low": round(float(row["Low"]), 2),
+                "close": round(float(row["Close"]), 2),
+                "volume": int(row["Volume"])
+            }
+            for date, row in df.iloc[-120:].iterrows()
+        ]
+        
+    return {
+        "status": "success",
+        "ticker": ticker.replace(".NS", ""),
+        "timeframe": timeframe,
+        "data": ohlcv_data
+    }
+
 @app.get("/api/scan")
 async def run_scan(
     strategy: str = Query("current"),
     universe: str = Query("chunk1"),
+    ticker: str = Query(None),
+    timeframe: str = Query("1D"),
     ema_fast: int = Query(9),
     ema_slow: int = Query(20),
     min_volume: int = Query(20000),
@@ -162,8 +261,18 @@ async def run_scan(
     use_swing_run: int = Query(1),
     use_base_pullback: int = Query(1)
 ):
+    if ticker:
+        return await get_historical_ticker_route(ticker, timeframe)
+
+    if timeframe == "1W":
+        period = "3y"
+    elif timeframe == "1M":
+        period = "10y"
+    else:
+        period = "6mo"
+
     tickers = get_nse_universe(universe)
-    data = yf.download(tickers, period="6mo", group_by="ticker", threads=True, progress=False)
+    data = yf.download(tickers, period=period, group_by="ticker", threads=True, progress=False)
     results = []
     
     for ticker in tickers:
@@ -176,10 +285,13 @@ async def run_scan(
                 df = data.copy()
             
             df = df.dropna(subset=["Close", "Volume"])
-            if len(df) < max(60, ema_slow, consolidation_days): continue 
             
-            close = df["Close"]
-            volume = df["Volume"]
+            # --- CRITICAL: Slicing for scan calculations ---
+            df_calc = df.iloc[-120:]
+            if len(df_calc) < max(60, ema_slow, consolidation_days): continue 
+            
+            close = df_calc["Close"]
+            volume = df_calc["Volume"]
             last_close = close.iloc[-1]
             prev_close = close.iloc[-2]
             change = round(((last_close - prev_close) / prev_close) * 100, 2)
@@ -231,7 +343,7 @@ async def run_scan(
 
             # 3. MODULAR CONSOLIDATION FILTER LOGIC
             if use_consolidation == 1:
-                if len(df) >= (consolidation_days + 1):
+                if len(df_calc) >= (consolidation_days + 1):
                     consol_patch = close.iloc[-(consolidation_days + 1) : -1]
                     highest_high = consol_patch.max()
                     lowest_low = consol_patch.min()
@@ -240,7 +352,7 @@ async def run_scan(
 
             # 4. MODULAR SWING RUN FILTER LOGIC
             if use_swing_run == 1:
-                lowest_swing_low = df["Low"].iloc[-20:].min()
+                lowest_swing_low = df_calc["Low"].iloc[-20:].min()
                 current_run_pct = ((last_close - lowest_swing_low) / lowest_swing_low) * 100
                 if current_run_pct < swing_run_pct: continue
 
@@ -269,17 +381,22 @@ async def run_scan(
                 for date, val in close.iloc[-30:].items()
             ]
             
-            ohlcv_data = [
-                {
-                    "time": date.strftime("%Y-%m-%d"),
-                    "open": round(row["Open"], 2),
-                    "high": round(row["High"], 2),
-                    "low": round(row["Low"], 2),
-                    "close": round(row["Close"], 2),
-                    "volume": int(row["Volume"])
-                }
-                for date, row in df.iloc[-120:].iterrows()
-            ]
+            if timeframe == "1W":
+                ohlcv_data = resample_to_weekly(df)[-120:]
+            elif timeframe == "1M":
+                ohlcv_data = resample_to_monthly(df)[-120:]
+            else:
+                ohlcv_data = [
+                    {
+                        "time": date.strftime("%Y-%m-%d"),
+                        "open": round(float(row["Open"]), 2),
+                        "high": round(float(row["High"]), 2),
+                        "low": round(float(row["Low"]), 2),
+                        "close": round(float(row["Close"]), 2),
+                        "volume": int(row["Volume"])
+                    }
+                    for date, row in df.iloc[-120:].iterrows()
+                ]
 
             metadata = {
                 "ticker": ticker.replace(".NS", ""),

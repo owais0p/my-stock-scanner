@@ -2060,20 +2060,38 @@
             if (overlay) overlay.classList.remove('hidden');
         };
 
-        window.switchChartTimeframe = function(ticker, tf) {
+        window.switchChartTimeframe = async function(ticker, tf) {
             const stockData = lastScanData.find(s => s.ticker === ticker);
-            if (!stockData || !stockData.ohlcv) return;
+            if (!stockData) return;
 
             const chart = activeCharts[ticker];
             if (!chart) return;
 
+            // Guard: check if the clicked timeframe button is already active to prevent duplicate requests
+            const btnContainer = document.getElementById(`tf-buttons-${ticker}`);
+            let isAlreadyActive = false;
+            if (btnContainer) {
+                const activeBtn = btnContainer.querySelector(`button[data-tf="${tf}"]`);
+                if (activeBtn && activeBtn.classList.contains('bg-emerald-500')) {
+                    isAlreadyActive = true;
+                }
+            }
+            if (isAlreadyActive) return;
+
+            // Fetch resampled historical candles from backend with timeframe parameter
             let ohlcvData;
-            if (tf === '1W') {
-                ohlcvData = resampleToWeekly(stockData.ohlcv);
-            } else if (tf === '1M') {
-                ohlcvData = resampleToMonthly(stockData.ohlcv);
-            } else {
-                ohlcvData = stockData.ohlcv; // 1D (default)
+            try {
+                const res = await fetch(`/api/scan?ticker=${ticker}&timeframe=${tf}`);
+                const result = await res.json();
+                if (result.status === 'success' && result.data) {
+                    ohlcvData = result.data;
+                } else {
+                    console.error('Failed to retrieve timeframe data:', result.message);
+                    return;
+                }
+            } catch (err) {
+                console.error('Failed to fetch historical data for', ticker, err);
+                return;
             }
 
             const isLight = document.body.classList.contains('light-theme');
@@ -2168,7 +2186,6 @@
             }, false, false, false);
 
             // Update active button state styling
-            const btnContainer = document.getElementById(`tf-buttons-${ticker}`);
             if (btnContainer) {
                 btnContainer.querySelectorAll('button').forEach(btn => {
                     const isCurrent = btn.getAttribute('data-tf') === tf;
