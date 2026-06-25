@@ -1373,14 +1373,21 @@
                             strokeDashArray: 4,
                             borderWidth: 1.5,
                             label: {
+                                show: false
+                            }
+                        },
+                        {
+                            y: lastClosePrice,
+                            borderColor: 'transparent',
+                            label: {
                                 show: true,
-                                text: 'CMP: ₹' + lastClosePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                                text: lastClosePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                 position: 'right',
                                 textAnchor: 'start',
-                                offsetX: 5,
+                                offsetX: 52,
                                 style: {
                                     color: '#fff',
-                                    background: cmpColor,
+                                    background: '#10B981',
                                     fontSize: '9px',
                                     fontWeight: 'bold',
                                     fontFamily: 'JetBrains Mono'
