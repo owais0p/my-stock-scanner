@@ -598,6 +598,12 @@
                     </div>
                 </div>
 
+                <!-- Scan BSE Universe Toggle -->
+                <label class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200/80 dark:border-slate-800/80 rounded-full bg-white dark:bg-[#060810] shadow-sm cursor-pointer select-none text-[8px] md:text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-accent hover:border-accent/40 transition-all shrink-0 hover:drop-shadow-[0_0_8px_rgba(0,255,157,0.2)]">
+                    <input type="checkbox" id="scan-bse-toggle" class="cyber-checkbox">
+                    <span>Scan BSE Universe</span>
+                </label>
+
                 <label class="switch shrink-0">
                     <input type="checkbox" id="theme-toggle">
                     <span class="slider"></span>
@@ -1178,7 +1184,12 @@
 
         async function triggerScan() {
             // UI Visual Update for Matrix Engine
-            matrixEngineDisplay.textContent = universeSelector.options[universeSelector.selectedIndex].text.split('(')[0].trim();
+            const scanBseVal = document.getElementById('scan-bse-toggle').checked ? 1 : 0;
+            if (scanBseVal) {
+                matrixEngineDisplay.textContent = "BSE 500";
+            } else {
+                matrixEngineDisplay.textContent = universeSelector.options[universeSelector.selectedIndex].text.split('(')[0].trim();
+            }
 
             scanBtn.disabled = true;
             resultsMeta.classList.add('hidden');
@@ -1211,7 +1222,7 @@
                 const useSwing = document.getElementById('use_swing_run').checked ? 1 : 0;
                 const useBase = document.getElementById('use_base_pullback').checked ? 1 : 0;
 
-                const response = await fetch(`/api/scan?strategy=${activeStrategy}&universe=${universe}&ema_fast=${emaFastVal}&ema_slow=${emaSlowVal}&min_volume=${minVolVal}&consolidation_days=${consolDays}&consolidation_range=${consolRange}&swing_run_pct=${swingRun}&base_pullback_pct=${basePct}&use_ema_filter=${useEma}&use_vol_filter=${useVol}&use_consolidation=${useConsol}&use_swing_run=${useSwing}&use_base_pullback=${useBase}`);
+                const response = await fetch(`/api/scan?strategy=${activeStrategy}&universe=${universe}&ema_fast=${emaFastVal}&ema_slow=${emaSlowVal}&min_volume=${minVolVal}&consolidation_days=${consolDays}&consolidation_range=${consolRange}&swing_run_pct=${swingRun}&base_pullback_pct=${basePct}&use_ema_filter=${useEma}&use_vol_filter=${useVol}&use_consolidation=${useConsol}&use_swing_run=${useSwing}&use_base_pullback=${useBase}&scan_bse=${scanBseVal}`);
                 const result = await response.json();
 
                 if (result.status === 'success') {
@@ -2081,7 +2092,10 @@
             // Fetch resampled historical candles from backend with timeframe parameter
             let ohlcvData;
             try {
-                const res = await fetch(`/api/scan?ticker=${ticker}&timeframe=${tf}`);
+                const exchange = stockData.exchange || 'NSE';
+                const suffix = exchange === 'BSE' ? '.BO' : '.NS';
+                const tickerWithSuffix = ticker + suffix;
+                const res = await fetch(`/api/scan?ticker=${tickerWithSuffix}&timeframe=${tf}`);
                 const result = await res.json();
                 if (result.status === 'success' && result.data) {
                     ohlcvData = result.data;
@@ -2350,8 +2364,8 @@
                             <h3 class="font-bold text-slate-800 dark:text-slate-100 uppercase text-xs md:text-sm tracking-wide flex items-center gap-1">
                                 ${stock.ticker}
                                 <span class="text-slate-400 bg-slate-800/50 px-1.5 py-0.5 rounded text-[10px] font-mono select-none">1D</span>
-                                <span class="text-slate-400 bg-slate-800/50 px-1.5 py-0.5 rounded text-[10px] font-mono select-none">NSE</span>
-                                <a href="https://www.tradingview.com/chart/?symbol=NSE:${stock.ticker}" target="_blank" class="text-slate-400 hover:text-accent transition-colors" title="Open in TradingView (New Tab)">
+                                <span class="text-slate-400 bg-slate-800/50 px-1.5 py-0.5 rounded text-[10px] font-mono select-none">${stock.exchange || 'NSE'}</span>
+                                <a href="https://www.tradingview.com/chart/?symbol=${stock.exchange || 'NSE'}:${stock.ticker}" target="_blank" class="text-slate-400 hover:text-accent transition-colors" title="Open in TradingView (New Tab)">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                                 </a>
                             </h3>
@@ -2407,8 +2421,8 @@
                                     <h3 class="text-sm font-bold tracking-wide text-slate-800 dark:text-slate-100 uppercase flex items-center gap-1">
                                         ${stock.ticker}
                                         <span class="text-slate-400 bg-slate-800/50 px-1.5 py-0.5 rounded text-[10px] font-mono select-none">1D</span>
-                                        <span class="text-slate-400 bg-slate-800/50 px-1.5 py-0.5 rounded text-[10px] font-mono select-none">NSE</span>
-                                        <a href="https://www.tradingview.com/chart/?symbol=NSE:${stock.ticker}" target="_blank" class="text-slate-400 hover:text-accent transition-colors" title="Open in TradingView">
+                                        <span class="text-slate-400 bg-slate-800/50 px-1.5 py-0.5 rounded text-[10px] font-mono select-none">${stock.exchange || 'NSE'}</span>
+                                        <a href="https://www.tradingview.com/chart/?symbol=${stock.exchange || 'NSE'}:${stock.ticker}" target="_blank" class="text-slate-400 hover:text-accent transition-colors" title="Open in TradingView">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                                         </a>
                                     </h3>
@@ -2448,7 +2462,8 @@
                         if (event.target.closest('[id^="tv-chart-container-"]') || event.target.closest('[id^="zoom-overlay-"]') || event.target.closest('a')) {
                             return;
                         }
-                        window.open('https://www.tradingview.com/chart/?symbol=NSE:' + stock.ticker, '_blank');
+                        const exchange = stock.exchange || 'NSE';
+                        window.open('https://www.tradingview.com/chart/?symbol=' + exchange + ':' + stock.ticker, '_blank');
                     };
 
                     const toggleBtn = card.querySelector('.toggle-chart-btn');
@@ -2530,6 +2545,7 @@
         strategyScannerBtn.addEventListener('click', () => updateStrategy('current'));
         strategyMomentumOpenBtn.addEventListener('click', () => updateStrategy('momentum_open_30'));
         universeSelector.addEventListener('change', () => triggerScan());
+        document.getElementById('scan-bse-toggle').addEventListener('change', () => triggerScan());
 
         // Debounced Window Resize event listener to handle viewport changes smoothly
         window.addEventListener('resize', debounce(() => {

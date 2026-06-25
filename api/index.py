@@ -118,6 +118,17 @@ async def give_feedback(payload: FeedbackPayload):
 
 
 
+def get_bse_universe():
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        n500_url = "https://nsearchives.nseindia.com/content/indices/ind_nifty500list.csv"
+        n500_res = requests.get(n500_url, headers=headers, timeout=10)
+        n500_df = pd.read_csv(io.StringIO(n500_res.text))
+        return [s.strip() + ".BO" for s in n500_df["Symbol"].str.strip().tolist()]
+    except Exception as e:
+        print(f"BSE Universe Error: {e}")
+        return ["RELIANCE.BO", "TCS.BO", "INFY.BO", "HDFCBANK.BO", "ICICIBANK.BO"]
+
 def get_nse_universe(universe_mode: str):
     try:
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
@@ -200,7 +211,10 @@ async def get_historical_ticker_route(ticker: str, timeframe: str = Query("1D"))
     else:
         period = "6mo"
         
-    yf_ticker = ticker if ticker.endswith(".NS") else f"{ticker}.NS"
+    if ticker.endswith(".NS") or ticker.endswith(".BO"):
+        yf_ticker = ticker
+    else:
+        yf_ticker = f"{ticker}.NS"
     df = yf.download(yf_ticker, period=period, progress=False)
     
     if df.empty:
@@ -235,7 +249,7 @@ async def get_historical_ticker_route(ticker: str, timeframe: str = Query("1D"))
         
     return {
         "status": "success",
-        "ticker": ticker.replace(".NS", ""),
+        "ticker": ticker.replace(".NS", "").replace(".BO", ""),
         "timeframe": timeframe,
         "data": ohlcv_data
     }
@@ -259,7 +273,8 @@ async def run_scan(
     use_vol_filter: int = Query(1),
     use_consolidation: int = Query(1),
     use_swing_run: int = Query(1),
-    use_base_pullback: int = Query(1)
+    use_base_pullback: int = Query(1),
+    scan_bse: int = Query(0)
 ):
     if ticker:
         return await get_historical_ticker_route(ticker, timeframe)
@@ -271,7 +286,10 @@ async def run_scan(
     else:
         period = "6mo"
 
-    tickers = get_nse_universe(universe)
+    if scan_bse == 1:
+        tickers = get_bse_universe()
+    else:
+        tickers = get_nse_universe(universe)
     data = yf.download(tickers, period=period, group_by="ticker", threads=True, progress=False)
     results = []
     
@@ -287,8 +305,20 @@ async def run_scan(
             df = df.dropna(subset=["Close", "Volume"])
             
             # --- CRITICAL: Slicing for scan calculations ---
-            df_calc = df.iloc[-120:]
-            if len(df_calc) < max(60, ema_slow, consolidation_days): continue 
+            # If the stock has limited history (Recent IPO tracking window)
+            is_ipo = 30 <= len(df) < 150
+            if is_ipo:
+                df_calc = df.copy()
+            else:
+                df_calc = df.iloc[-120:]
+                
+            # Validation guard gate
+            if is_ipo:
+                # Bypass 150/200 EMA filters completely to prevent rejection
+                # Execute Consolidation / Volatility Contraction Pattern (VCP) analysis strictly on the available lifecycle data since Listing Day High.
+                if len(df_calc) < 30: continue
+            else:
+                if len(df_calc) < max(60, ema_slow, consolidation_days): continue 
             
             close = df_calc["Close"]
             volume = df_calc["Volume"]
@@ -399,7 +429,8 @@ async def run_scan(
                 ]
 
             metadata = {
-                "ticker": ticker.replace(".NS", ""),
+                "ticker": ticker.replace(".NS", "").replace(".BO", ""),
+                "exchange": "BSE" if ticker.endswith(".BO") else "NSE",
                 "price": round(last_close, 2),
                 "change": change,
                 "Volume": val,

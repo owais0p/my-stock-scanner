@@ -9,20 +9,23 @@ This document provides a comprehensive breakdown of the engineering decisions, t
 
 ## 2. Backend Engine (FastAPI & Python)
 - **Framework**: FastAPI (Asynchronous high-performance engine).
-- **Data Sourcing**: `yfinance` for multi-threaded market data retrieval.
+- **Data Sourcing**: `yfinance` for multi-threaded market data retrieval supporting National Stock Exchange (NSE) and Bombay Stock Exchange (BSE) via `.NS`/`.BO` ticker suffix routing.
 - **Scanning Matrix (Universe Segmentation)**:
     - **Chunk 1 & 2 (Premium)**: Derived from the **Nifty 500** list. Segmented into two 250-symbol blocks for high-liquidity institutional focus.
     - **Chunk 3, 4 & 5 (Alpha Pools)**: Derived from the broader NSE equity market (excluding Nifty 500). Split evenly into three segments to surface under-the-radar micro-cap and nano-cap opportunities.
+    - **BSE Universe (Alpha Pool)**: When the "Scan BSE Universe" toggle is active, uvicorn fetches the top 500 liquid BSE stock tickers mapped dynamically from the Nifty 500 list.
 - **Logic Parameters**:
     - `strategy`: Supports `current` (MOMENTUM VELOCITY), `vcp` (VCP MATRIX), `momentum_2` (MOMENTUM 2), and `vcp_2` (MOMENTUM VELOCITY 2.0).
     - `universe`: Targets specific market slices from `chunk1` to `chunk5`.
+    - `scan_bse`: Switch flag triggering uvicorn scan of the top 500 liquid BSE stock tickers.
 - **Performance Optimizations**:
     - **Fast Price Lookup**: Implements `fast_info` metadata retrieval with a strict **0.5s thread-based timeout** to eliminate network-loop lag.
     - **Historical Volume Fallback**: Intelligent lookback logic that scans for the last non-zero trading session's volume, ensuring data consistency during off-market hours.
     - **Uniform Batch Loading**: Standardized all engines to use the high-efficiency `4mo` historical data baseline to maximize execution speed and ensure glitch-free pipeline results.
 - **Institutional Guardrails**:
-    - **Price Floor**: Strict `if last_close < 50` rule to eliminate high-risk penny stocks.
+    - **Price Floor**: Strict `if last_close < 50` rule (fallback to 30 for Momentum Open 2.0) to eliminate high-risk penny stocks.
     - **Liquidity Barrier**: Enforces a minimum **100k average daily volume** (20-day baseline) to ensure tradeability.
+    - **IPO Base Bypassing Guard Gate**: Automatically identifies recent IPOs with limited data history (`30 <= len(df) < 150`) to bypass 60-bar constraints and long-term EMA filters, running consolidation/VCP checks strictly on listing day history to capture new market breakouts instantly.
 - **Momentum Engines**:
 - **Momentum Velocity**: Scores based on 9/20 EMA support and proximity to recent highs.
 - **Momentum Open 2.0**: A specialized high-alpha engine with a relaxed ₹30 price floor and no liquidity constraints, designed for early-session volatility capture.
