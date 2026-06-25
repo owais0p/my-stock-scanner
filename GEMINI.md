@@ -15,7 +15,7 @@
 
 ## Key Workflows
 - **Scanning Logic**: Triggered via `/api/scan`. Downloads data for the targeted NSE/BSE universe segment in parallel.
-- **BSE Universe Toggle**: Includes a "Scan BSE Universe" checkbox in the header which targets the top 500 liquid BSE stock tickers (resolved using Yahoo Finance `.BO` suffix mappings).
+- **BSE Universe Toggle**: Includes a "Scan Combined Market (NSE + BSE Exclusives)" checkbox in the header which targets the union of the active NSE segment and BSE-exclusive stock tickers (resolved using Yahoo Finance `.BO` suffix mappings and de-duplicated against full NSE listings).
 - **IPO Base Bypassing Guard Gate**: Automatically catches recent IPOs with limited history (`30 <= len(df) < 150`) to bypass 60-day baseline limits and long-term EMA filters, running consolidation and VCP analysis on the available listing history.
 - **Unified Live Filters Matrix**: The backend uses a centralized gate system to evaluate dynamic user inputs (`ema_fast`, `ema_slow`, `min_volume`, `consolidation`, `swing_run`, `base_pullback`) BEFORE applying strategy-specific logic. Advanced filters are strictly disarmed (unchecked) by default on app boot.
 - **Filtering**:

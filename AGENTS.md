@@ -39,7 +39,7 @@ AAPNATRADER is a high-performance, institutional-grade stock scanning dashboard 
 
 ## 📱 Key UI Components
 - **Follow Us Hub**: Header-pinned social links (Telegram/Instagram) with neon hover effects and mobile adaptive layout (icons-only on mobile).
-- **BSE Universe Toggle**: Header-pinned checkbox switch ("Scan BSE Universe") to dynamically switch the target market universe scan to the top 500 liquid BSE stocks.
+- **BSE Universe Toggle**: Header-pinned checkbox switch ("Scan Combined Market (NSE + BSE Exclusives)") to dynamically switch the target market universe scan to a union of the active NSE segment and BSE-exclusive stocks.
 - **Tactical Sort**: Pill-shaped sorting button for dynamic, client-side re-rendering of results by % change.
 - **Sentinel Monitor**: A pulsing status indicator signifying the active data link.
 

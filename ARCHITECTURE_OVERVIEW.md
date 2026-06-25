@@ -13,11 +13,11 @@ This document provides a comprehensive breakdown of the engineering decisions, t
 - **Scanning Matrix (Universe Segmentation)**:
     - **Chunk 1 & 2 (Premium)**: Derived from the **Nifty 500** list. Segmented into two 250-symbol blocks for high-liquidity institutional focus.
     - **Chunk 3, 4 & 5 (Alpha Pools)**: Derived from the broader NSE equity market (excluding Nifty 500). Split evenly into three segments to surface under-the-radar micro-cap and nano-cap opportunities.
-    - **BSE Universe (Alpha Pool)**: When the "Scan BSE Universe" toggle is active, uvicorn fetches the top 500 liquid BSE stock tickers mapped dynamically from the Nifty 500 list.
+    - **Combined Market Universe**: When the "Scan Combined Market (NSE + BSE Exclusives)" toggle is active, uvicorn fetches a union of the active NSE segment and BSE-exclusive stock tickers.
 - **Logic Parameters**:
     - `strategy`: Supports `current` (MOMENTUM VELOCITY), `vcp` (VCP MATRIX), `momentum_2` (MOMENTUM 2), and `vcp_2` (MOMENTUM VELOCITY 2.0).
     - `universe`: Targets specific market slices from `chunk1` to `chunk5`.
-    - `scan_bse`: Switch flag triggering uvicorn scan of the top 500 liquid BSE stock tickers.
+    - `scan_combined`: Switch flag triggering uvicorn scan of the combined market (NSE segment + BSE-exclusive stocks).
 - **Performance Optimizations**:
     - **Fast Price Lookup**: Implements `fast_info` metadata retrieval with a strict **0.5s thread-based timeout** to eliminate network-loop lag.
     - **Historical Volume Fallback**: Intelligent lookback logic that scans for the last non-zero trading session's volume, ensuring data consistency during off-market hours.

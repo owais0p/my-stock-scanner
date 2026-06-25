@@ -598,10 +598,10 @@
                     </div>
                 </div>
 
-                <!-- Scan BSE Universe Toggle -->
+                <!-- Scan Combined Market Toggle -->
                 <label class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200/80 dark:border-slate-800/80 rounded-full bg-white dark:bg-[#060810] shadow-sm cursor-pointer select-none text-[8px] md:text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-accent hover:border-accent/40 transition-all shrink-0 hover:drop-shadow-[0_0_8px_rgba(0,255,157,0.2)]">
-                    <input type="checkbox" id="scan-bse-toggle" class="cyber-checkbox">
-                    <span>Scan BSE Universe</span>
+                    <input type="checkbox" id="scan-combined-toggle" class="cyber-checkbox">
+                    <span>Scan Combined Market (NSE + BSE Exclusives)</span>
                 </label>
 
                 <label class="switch shrink-0">
@@ -1184,9 +1184,9 @@
 
         async function triggerScan() {
             // UI Visual Update for Matrix Engine
-            const scanBseVal = document.getElementById('scan-bse-toggle').checked ? 1 : 0;
-            if (scanBseVal) {
-                matrixEngineDisplay.textContent = "BSE 500";
+            const scanCombinedVal = document.getElementById('scan-combined-toggle').checked ? 1 : 0;
+            if (scanCombinedVal) {
+                matrixEngineDisplay.textContent = "Combined Market";
             } else {
                 matrixEngineDisplay.textContent = universeSelector.options[universeSelector.selectedIndex].text.split('(')[0].trim();
             }
@@ -1222,7 +1222,7 @@
                 const useSwing = document.getElementById('use_swing_run').checked ? 1 : 0;
                 const useBase = document.getElementById('use_base_pullback').checked ? 1 : 0;
 
-                const response = await fetch(`/api/scan?strategy=${activeStrategy}&universe=${universe}&ema_fast=${emaFastVal}&ema_slow=${emaSlowVal}&min_volume=${minVolVal}&consolidation_days=${consolDays}&consolidation_range=${consolRange}&swing_run_pct=${swingRun}&base_pullback_pct=${basePct}&use_ema_filter=${useEma}&use_vol_filter=${useVol}&use_consolidation=${useConsol}&use_swing_run=${useSwing}&use_base_pullback=${useBase}&scan_bse=${scanBseVal}`);
+                const response = await fetch(`/api/scan?strategy=${activeStrategy}&universe=${universe}&ema_fast=${emaFastVal}&ema_slow=${emaSlowVal}&min_volume=${minVolVal}&consolidation_days=${consolDays}&consolidation_range=${consolRange}&swing_run_pct=${swingRun}&base_pullback_pct=${basePct}&use_ema_filter=${useEma}&use_vol_filter=${useVol}&use_consolidation=${useConsol}&use_swing_run=${useSwing}&use_base_pullback=${useBase}&scan_combined=${scanCombinedVal}`);
                 const result = await response.json();
 
                 if (result.status === 'success') {
@@ -2545,7 +2545,7 @@
         strategyScannerBtn.addEventListener('click', () => updateStrategy('current'));
         strategyMomentumOpenBtn.addEventListener('click', () => updateStrategy('momentum_open_30'));
         universeSelector.addEventListener('change', () => triggerScan());
-        document.getElementById('scan-bse-toggle').addEventListener('change', () => triggerScan());
+        document.getElementById('scan-combined-toggle').addEventListener('change', () => triggerScan());
 
         // Debounced Window Resize event listener to handle viewport changes smoothly
         window.addEventListener('resize', debounce(() => {

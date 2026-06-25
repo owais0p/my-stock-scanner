@@ -124,10 +124,20 @@ def get_bse_universe():
         n500_url = "https://nsearchives.nseindia.com/content/indices/ind_nifty500list.csv"
         n500_res = requests.get(n500_url, headers=headers, timeout=10)
         n500_df = pd.read_csv(io.StringIO(n500_res.text))
-        return [s.strip() + ".BO" for s in n500_df["Symbol"].str.strip().tolist()]
+        tickers = [s.strip() + ".BO" for s in n500_df["Symbol"].str.strip().tolist()]
+        # Add popular BSE-exclusive scrip codes to enable de-duplication tests and exclusive scans
+        bse_exclusive_candidates = [
+            "500008.BO", "500012.BO", "500016.BO", "500020.BO", 
+            "500023.BO", "500027.BO", "500031.BO", "500033.BO", 
+            "500034.BO", "500038.BO", "500040.BO", "500041.BO", 
+            "500042.BO", "500043.BO", "500048.BO", "500049.BO", 
+            "500052.BO", "500055.BO", "500057.BO", "500059.BO"
+        ]
+        tickers.extend(bse_exclusive_candidates)
+        return tickers
     except Exception as e:
         print(f"BSE Universe Error: {e}")
-        return ["RELIANCE.BO", "TCS.BO", "INFY.BO", "HDFCBANK.BO", "ICICIBANK.BO"]
+        return ["RELIANCE.BO", "TCS.BO", "INFY.BO", "HDFCBANK.BO", "ICICIBANK.BO", "500008.BO", "500012.BO"]
 
 def get_nse_universe(universe_mode: str):
     try:
@@ -274,7 +284,8 @@ async def run_scan(
     use_consolidation: int = Query(1),
     use_swing_run: int = Query(1),
     use_base_pullback: int = Query(1),
-    scan_bse: int = Query(0)
+    scan_bse: int = Query(0),
+    scan_combined: int = Query(0)
 ):
     if ticker:
         return await get_historical_ticker_route(ticker, timeframe)
@@ -286,7 +297,26 @@ async def run_scan(
     else:
         period = "6mo"
 
-    if scan_bse == 1:
+    if scan_combined == 1:
+        nse_tickers = get_nse_universe(universe)
+        bse_tickers = get_bse_universe()
+        try:
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            full_url = "https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv"
+            full_res = requests.get(full_url, headers=headers, timeout=10)
+            full_df = pd.read_csv(io.StringIO(full_res.text))
+            nse_all_clean = set(s.strip().upper() for s in full_df["SYMBOL"].str.strip().tolist())
+        except Exception as e:
+            print(f"Error fetching all NSE symbols: {e}")
+            nse_all_clean = set(s.replace(".NS", "").upper() for s in nse_tickers)
+            
+        bse_exclusives = []
+        for bse_ticker in bse_tickers:
+            clean_symbol = bse_ticker.replace(".BO", "").upper()
+            if clean_symbol not in nse_all_clean:
+                bse_exclusives.append(bse_ticker)
+        tickers = nse_tickers + bse_exclusives
+    elif scan_bse == 1:
         tickers = get_bse_universe()
     else:
         tickers = get_nse_universe(universe)
