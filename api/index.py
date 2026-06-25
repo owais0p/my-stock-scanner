@@ -1,10 +1,13 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 import yfinance as yf
 import pandas as pd
 import requests
 import io
+import json
+import os
 from datetime import datetime
 
 app = FastAPI()
@@ -15,6 +18,60 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+class ReportPayload(BaseModel):
+    category: str
+    description: str
+
+class FeedbackPayload(BaseModel):
+    rating: int
+    improvement: str
+
+def append_to_user_logs(entry: dict):
+    log_file = "user_logs.json"
+    logs = []
+    if os.path.exists(log_file):
+        try:
+            with open(log_file, "r") as f:
+                logs = json.load(f)
+        except Exception as e:
+            print(f"Error reading {log_file}: {e}")
+            logs = []
+            
+    logs.append(entry)
+    
+    try:
+        with open(log_file, "w") as f:
+            json.dump(logs, f, indent=4)
+    except Exception as e:
+        print(f"Error writing to {log_file}: {e}")
+
+@app.post("/api/report")
+async def report_problem(payload: ReportPayload):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_entry = {
+        "timestamp": timestamp,
+        "type": "report",
+        "category": payload.category,
+        "description": payload.description
+    }
+    print(f"[{timestamp}] [USER REPORT] Category: {payload.category} | Description: {payload.description}")
+    append_to_user_logs(log_entry)
+    return {"status": "success", "message": "Report Submitted! Thanks."}
+
+@app.post("/api/feedback")
+async def give_feedback(payload: FeedbackPayload):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_entry = {
+        "timestamp": timestamp,
+        "type": "feedback",
+        "rating": payload.rating,
+        "improvement": payload.improvement
+    }
+    print(f"[{timestamp}] [USER FEEDBACK] Rating: {payload.rating} | Improvement: {payload.improvement}")
+    append_to_user_logs(log_entry)
+    return {"status": "success", "message": "Feedback Submitted! Thanks."}
+
 
 def get_nse_universe(universe_mode: str):
     try:

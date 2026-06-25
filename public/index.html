@@ -549,6 +549,22 @@
                 letter-spacing: 0.1em;
             }
         }
+
+        /* Custom Scrollbar for Modals */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
     </style>
 </head>
 <body class="font-mono selection:bg-accent/30 selection:text-accent theme-transition">
@@ -768,6 +784,15 @@
                     </div>
                 </div>
 
+                <!-- Minimalist Footer Action Triggers inside sidebar -->
+                <div class="flex flex-wrap items-center justify-center gap-2 pt-6 border-t border-border/40 font-mono text-[10px] md:text-xs text-slate-400 select-none">
+                    <span onclick="openModal('report-modal')" class="hover:text-emerald-400 transition-colors cursor-pointer">Report a Problem</span>
+                    <span class="text-slate-600">|</span>
+                    <span onclick="openModal('feedback-modal')" class="hover:text-emerald-400 transition-colors cursor-pointer">Give Feedback</span>
+                    <span class="text-slate-600">|</span>
+                    <span onclick="openModal('privacy-modal')" class="hover:text-emerald-400 transition-colors cursor-pointer">Privacy Policy</span>
+                </div>
+
             </div>
 
             <!-- Column B (Results Deck - Right Side on Desktop) -->
@@ -819,6 +844,106 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+
+    <!-- Global Footer -->
+    <footer class="w-full py-8 border-t border-border/20 mt-12 flex flex-col md:flex-row items-center justify-between px-4 md:px-8 gap-4 font-mono text-xs text-slate-400 select-none relative z-10">
+        <div>&copy; 2026 AAPNATRADER. All rights reserved.</div>
+        <div class="flex flex-wrap items-center justify-center gap-3">
+            <span onclick="openModal('report-modal')" class="hover:text-emerald-400 transition-colors cursor-pointer">Report a Problem</span>
+            <span class="text-slate-600">|</span>
+            <span onclick="openModal('feedback-modal')" class="hover:text-emerald-400 transition-colors cursor-pointer">Give Feedback</span>
+            <span class="text-slate-600">|</span>
+            <span onclick="openModal('privacy-modal')" class="hover:text-emerald-400 transition-colors cursor-pointer">Privacy Policy</span>
+        </div>
+    </footer>
+
+    <!-- Report Problem Modal -->
+    <div id="report-modal" class="modal-backdrop hidden fixed inset-0 flex items-center justify-center bg-black/75 backdrop-blur-sm z-[99999] px-4">
+        <div class="w-full max-w-md bg-[#0d131f] border border-slate-800 rounded-lg p-6 relative shadow-2xl text-slate-300 font-mono">
+            <button onclick="closeModal('report-modal')" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h3 class="text-xs font-bold text-slate-100 uppercase tracking-widest mb-4 border-b border-border/50 pb-2">Report a Problem</h3>
+            <form id="report-form" class="space-y-4">
+                <div>
+                    <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Category</label>
+                    <select id="report-category" required class="w-full bg-[#060810] border border-slate-800 text-slate-300 py-2.5 px-3 rounded text-[10px] font-bold tracking-widest uppercase focus:outline-none focus:border-accent transition-all cursor-pointer">
+                        <option value="Chart Lag">Chart Lag</option>
+                        <option value="Data Mismatch">Data Mismatch</option>
+                        <option value="Scanner Bug">Scanner Bug</option>
+                        <option value="UI Rendering">UI Rendering</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Description</label>
+                    <textarea id="report-description" required rows="4" placeholder="Please describe the issue in detail..." class="w-full bg-[#060810] border border-slate-800 text-slate-300 py-2.5 px-3 rounded text-[10px] focus:outline-none focus:border-accent transition-all placeholder:text-slate-600 resize-none"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-accent text-background py-2.5 rounded font-black text-[10px] tracking-wider uppercase active:scale-95 transition-all flex items-center justify-center gap-2">
+                    Submit Issue
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Give Feedback Modal -->
+    <div id="feedback-modal" class="modal-backdrop hidden fixed inset-0 flex items-center justify-center bg-black/75 backdrop-blur-sm z-[99999] px-4">
+        <div class="w-full max-w-md bg-[#0d131f] border border-slate-800 rounded-lg p-6 relative shadow-2xl text-slate-300 font-mono">
+            <button onclick="closeModal('feedback-modal')" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h3 class="text-xs font-bold text-slate-100 uppercase tracking-widest mb-4 border-b border-border/50 pb-2">Give Feedback</h3>
+            <form id="feedback-form" class="space-y-4">
+                <div>
+                    <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Rating</label>
+                    <div class="flex items-center justify-between gap-1">
+                        <button type="button" data-rating="1" class="feedback-emoji-btn text-2xl p-2 rounded hover:bg-slate-800/50 transition-all select-none focus:outline-none border border-transparent" title="Angry">😠</button>
+                        <button type="button" data-rating="2" class="feedback-emoji-btn text-2xl p-2 rounded hover:bg-slate-800/50 transition-all select-none focus:outline-none border border-transparent" title="Sad">🙁</button>
+                        <button type="button" data-rating="3" class="feedback-emoji-btn text-2xl p-2 rounded hover:bg-slate-800/50 transition-all select-none focus:outline-none border border-transparent" title="Neutral">😐</button>
+                        <button type="button" data-rating="4" class="feedback-emoji-btn text-2xl p-2 rounded hover:bg-slate-800/50 transition-all select-none focus:outline-none border border-transparent" title="Happy">🙂</button>
+                        <button type="button" data-rating="5" class="feedback-emoji-btn text-2xl p-2 rounded hover:bg-slate-800/50 transition-all select-none focus:outline-none border border-transparent" title="Love It">🤩</button>
+                    </div>
+                    <input type="hidden" id="feedback-rating-val" required value="">
+                </div>
+                <div>
+                    <label class="text-[9px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Improvement Requests</label>
+                    <textarea id="feedback-improvement" rows="4" placeholder="How can we make AAPNATRADER better?" class="w-full bg-[#060810] border border-slate-800 text-slate-300 py-2.5 px-3 rounded text-[10px] focus:outline-none focus:border-accent transition-all placeholder:text-slate-600 resize-none"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-accent text-background py-2.5 rounded font-black text-[10px] tracking-wider uppercase active:scale-95 transition-all flex items-center justify-center gap-2">
+                    Submit Feedback
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Privacy Policy Modal -->
+    <div id="privacy-modal" class="modal-backdrop hidden fixed inset-0 flex items-center justify-center bg-black/75 backdrop-blur-sm z-[99999] px-4">
+        <div class="w-full max-w-lg bg-[#0d131f] border border-slate-800 rounded-lg p-6 relative shadow-2xl text-slate-300 font-mono">
+            <button onclick="closeModal('privacy-modal')" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h3 class="text-xs font-bold text-slate-100 uppercase tracking-widest mb-4 border-b border-border/50 pb-2">Legal Disclaimer & Compliance</h3>
+            <div class="text-left leading-relaxed text-slate-300 space-y-3 font-mono text-[11px] max-h-80 overflow-y-auto pr-2 custom-scrollbar">
+                <p class="font-bold text-red-400">⚠️ IMPORTANT: NOT SEBI REGISTERED DISCLAIMER</p>
+                <p><strong>AAPNATRADER, its developers, and the scanning algorithms are NOT registered with the Securities and Exchange Board of India (SEBI).</strong></p>
+                <p>We are not SEBI registered research analysts or investment advisors. All content, charts, and scanned signals generated by this application are strictly for educational, informational, and research purposes only. Please consult your own certified financial advisor before making any actual investing or trading decisions.</p>
+                
+                <p class="font-bold text-slate-100">⚠️ ABSOLUTE LIMITATION OF LIABILITY (LOSS/RISK WAIVER)</p>
+                <p>Trading in equities, futures, and options involves significant financial risk. By using this scanner, you explicitly agree that AAPNATRADER, its creators, and its system algorithms shall NOT be held liable for any financial losses, capital erosion, missed opportunities, or damages resulting directly or indirectly from the use of these technical scans. Every trade you execute is solely your own responsibility.</p>
+                
+                <p class="font-bold text-slate-100">⚙️ UNFORESEEN CIRCUMSTANCES & DATA DISCLAIMER</p>
+                <p>Technical systems can experience data feed latencies, chart rendering anomalies, or unforeseen software glitches. The data points displayed (including EMAs, Volume Breakouts, and Price Coordinates) are derived from mathematical formulas on historical data arrays and should not be treated as absolute guarantees of future market performance.</p>
+
+                <p class="font-bold text-slate-100">🔒 SECURE PREFERENCE STORAGE</p>
+                <p>All dashboard parameters, selection filters (such as custom EMAs, volume criteria, swing indicators), and design layout states (theme presets) are saved exclusively within your local browser storage engine (e.g. <code>localStorage</code>).</p>
+                
+                <p class="text-slate-500 text-[9px] pt-1">Last Updated: June 25, 2026</p>
+            </div>
+            <button onclick="closeModal('privacy-modal')" class="w-full mt-6 bg-accent text-background py-2.5 rounded font-black text-[10px] tracking-wider uppercase active:scale-95 transition-all">
+                I AGREE & ENTER
+            </button>
         </div>
     </div>
 
@@ -2147,6 +2272,149 @@
                 }
             });
         }, 150));
+
+        // --- Compliance, Feedback & Reporting Modals ---
+        window.openModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+            }
+        };
+
+        window.closeModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+            }
+        };
+
+        // Close modal when clicking outside the box
+        document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+            backdrop.addEventListener('click', (e) => {
+                if (e.target === backdrop) {
+                    closeModal(backdrop.id);
+                }
+            });
+        });
+
+        // Feedback emoji selection logic
+        const emojiButtons = document.querySelectorAll('.feedback-emoji-btn');
+        const feedbackRatingVal = document.getElementById('feedback-rating-val');
+
+        emojiButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Clear active states
+                emojiButtons.forEach(b => {
+                    b.classList.remove('bg-emerald-500/10', 'border-emerald-500/50', 'text-emerald-400', 'shadow-[0_0_10px_rgba(16,185,129,0.15)]');
+                    b.classList.add('border-transparent');
+                });
+                // Set active
+                btn.classList.remove('border-transparent');
+                btn.classList.add('bg-emerald-500/10', 'border-emerald-500/50', 'text-emerald-400', 'shadow-[0_0_10px_rgba(16,185,129,0.15)]');
+                
+                feedbackRatingVal.value = btn.getAttribute('data-rating');
+            });
+        });
+
+        // Form Submit Handlers
+        const reportForm = document.getElementById('report-form');
+        if (reportForm) {
+            reportForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const category = document.getElementById('report-category').value;
+                const description = document.getElementById('report-description').value;
+
+                try {
+                    const res = await fetch('/api/report', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ category, description })
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        showToast(data.message || 'Report Submitted! Thanks.', 'success');
+                        reportForm.reset();
+                        closeModal('report-modal');
+                    } else {
+                        showToast('Submission failed. Try again.', 'error');
+                    }
+                } catch (err) {
+                    showToast('Network error occurred.', 'error');
+                }
+            });
+        }
+
+        const feedbackForm = document.getElementById('feedback-form');
+        if (feedbackForm) {
+            feedbackForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const rating = parseInt(feedbackRatingVal.value, 10);
+                const improvement = document.getElementById('feedback-improvement').value;
+
+                if (isNaN(rating) || rating < 1 || rating > 5) {
+                    showToast('Please select a rating emoji.', 'error');
+                    return;
+                }
+
+                try {
+                    const res = await fetch('/api/feedback', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ rating, improvement })
+                    });
+                    const data = await res.json();
+                    if (data.status === 'success') {
+                        showToast(data.message || 'Feedback Submitted! Thanks.', 'success');
+                        feedbackForm.reset();
+                        // Reset emoji active states
+                        emojiButtons.forEach(b => {
+                            b.classList.remove('bg-emerald-500/10', 'border-emerald-500/50', 'text-emerald-400', 'shadow-[0_0_10px_rgba(16,185,129,0.15)]');
+                            b.classList.add('border-transparent');
+                        });
+                        feedbackRatingVal.value = '';
+                        closeModal('feedback-modal');
+                    } else {
+                        showToast('Submission failed. Try again.', 'error');
+                    }
+                } catch (err) {
+                    showToast('Network error occurred.', 'error');
+                }
+            });
+        }
+
+        // Transient Toast helper
+        function showToast(message, type = 'success') {
+            const existing = document.getElementById('transient-toast');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.id = 'transient-toast';
+            toast.className = `fixed bottom-6 right-6 px-4 py-3 rounded-md font-mono text-[10px] uppercase tracking-wider z-[999999] shadow-xl border transition-all duration-300 transform translate-y-0 opacity-100 ${
+                type === 'success' 
+                    ? 'bg-[#0d131f]/95 border-emerald-500/40 text-emerald-400 shadow-emerald-950/20'
+                    : 'bg-[#0d131f]/95 border-red-500/40 text-red-400 shadow-red-950/20'
+            }`;
+            
+            toast.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="relative flex h-2 w-2">
+                        <span class="absolute inline-flex h-full w-full rounded-full ${type === 'success' ? 'bg-emerald-400' : 'bg-red-400'} opacity-75 animate-ping"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 ${type === 'success' ? 'bg-emerald-500' : 'bg-red-500'}"></span>
+                    </span>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.replace('opacity-100', 'opacity-0');
+                toast.classList.replace('translate-y-0', 'translate-y-4');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
     </script>
     <!-- Global card click tab-opening intercepted handler removed in favor of inline show/hide buttons and grid views -->
 </body>
