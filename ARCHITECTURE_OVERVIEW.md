@@ -54,6 +54,16 @@ This document provides a comprehensive breakdown of the engineering decisions, t
     - **Native Tab Redirection**: Global click interceptor launches TradingView charts directly in new tabs for zero-latency analysis.
     - **Client-Side Export**: Browser-side CSV generation (including Volume data) using Blobs.
 
-## 4. Deployment Strategy
+## 4. Interactive Charting & Resampling Engine
+- **Canvas Integration**: Embedded interactive ApexCharts candlestick + volume charts inside cards, supporting TradingView-style vertical scaling and right Y-axis scale price badges.
+- **Client-Side Timeframe Selector**: Integrates client-side weekly (Monday-Sunday) and monthly candle resampling. When the user switches timeframes (1D / 1W / 1M), daily data is dynamically aggregated (Monday Open, Friday Close, Highest High, Lowest Low, Sum of Volume) and updated instantly using `chart.updateSeries` with `animate: false`.
+- **Y-Axis Volume Scale Lock**: Automatically enforces a volume-constraining scale (`min: 0, max: function(max) { return max * 3.0; }`) when switching timeframes, keeping volume bars strictly bound to the bottom 33% height of the chart floor.
+- **Layout & Padding Optimizations**:
+  - **Repositioned Legend**: Legend container floats on the top-right (`position: 'top', horizontalAlign: 'right', floating: true, offsetY: -10, offsetX: -10`) to sit inline next to timeframe switchers without claiming a dedicated horizontal row block.
+  - **Expanded Grid Padding**: Increased bottom grid padding (`grid.padding.bottom: 25`) to stretch the active layout bounds.
+  - **Height Constraints**: Expanded card height containers to `h-[400px]` (List View inline charts) and `h-[360px]` (Grid/Maze View card charts) to ensure volume bars sit cleanly without vertical clipping.
+  - **Event Shielding**: Dynamic buttons and toolbars catch and call `e.stopPropagation()` on mouse events to prevent interference with chart-dragging and scale-panning handlers.
+
+## 5. Deployment Strategy
 - **Automation**: GitHub integration with Hugging Face for automated Docker builds.
 - **Continuity**: Local environment configured with custom Python library paths to match production requirements (Port 7860).
