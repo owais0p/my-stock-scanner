@@ -19,32 +19,44 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- Real-Time Telegram Webhook Configuration ---
+TELEGRAM_BOT_TOKEN = "YOUR_BOT_TOKEN"
+TELEGRAM_CHAT_ID = "YOUR_CHAT_ID"
+
 class ReportPayload(BaseModel):
     category: str
     description: str
+    device_info: str = "Unknown"
 
 class FeedbackPayload(BaseModel):
     rating: int
     improvement: str
+    device_info: str = "Unknown"
 
-def append_to_user_logs(entry: dict):
-    log_file = "user_logs.json"
-    logs = []
-    if os.path.exists(log_file):
-        try:
-            with open(log_file, "r") as f:
-                logs = json.load(f)
-        except Exception as e:
-            print(f"Error reading {log_file}: {e}")
-            logs = []
-            
-    logs.append(entry)
-    
+def append_to_submissions_log(entry: dict):
+    log_file = "submissions_log.json"
     try:
-        with open(log_file, "w") as f:
-            json.dump(logs, f, indent=4)
+        # Open/Create submissions_log.json in append mode (a+)
+        with open(log_file, "a+") as f:
+            # Safely write the JSON dictionary sequence
+            f.write(json.dumps(entry) + "\n")
     except Exception as e:
-        print(f"Error writing to {log_file}: {e}")
+        print(f"Error logging to submissions_log.json: {e}")
+
+def send_telegram_alert(message: str):
+    if TELEGRAM_BOT_TOKEN == "YOUR_BOT_TOKEN" or TELEGRAM_CHAT_ID == "YOUR_CHAT_ID":
+        return
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+        payload = {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": message,
+            "parse_mode": "Markdown"
+        }
+        # Lightweight synchronous requests POST call with 5 seconds timeout
+        requests.post(url, json=payload, timeout=5)
+    except Exception as e:
+        print(f"Telegram Webhook Alert failed: {e}")
 
 @app.post("/api/report")
 async def report_problem(payload: ReportPayload):
@@ -53,10 +65,26 @@ async def report_problem(payload: ReportPayload):
         "timestamp": timestamp,
         "type": "report",
         "category": payload.category,
-        "description": payload.description
+        "description": payload.description,
+        "device_info": payload.device_info
     }
-    print(f"[{timestamp}] [USER REPORT] Category: {payload.category} | Description: {payload.description}")
-    append_to_user_logs(log_entry)
+    
+    # 1. Console print
+    print(f"[{timestamp}] [USER REPORT] Category: {payload.category} | Device: {payload.device_info} | Description: {payload.description}")
+    
+    # 2. Append directly to local submissions_log.json
+    append_to_submissions_log(log_entry)
+    
+    # 3. Dispatch real-time Telegram alert
+    alert_text = (
+        f"*🚨 AAPNATRADER - NEW PROBLEM REPORT*\n"
+        f"*Category:* {payload.category}\n"
+        f"*Time:* {timestamp}\n"
+        f"*Device:* `{payload.device_info}`\n\n"
+        f"*Description:*\n{payload.description}"
+    )
+    send_telegram_alert(alert_text)
+    
     return {"status": "success", "message": "Report Submitted! Thanks."}
 
 @app.post("/api/feedback")
@@ -66,11 +94,28 @@ async def give_feedback(payload: FeedbackPayload):
         "timestamp": timestamp,
         "type": "feedback",
         "rating": payload.rating,
-        "improvement": payload.improvement
+        "improvement": payload.improvement,
+        "device_info": payload.device_info
     }
-    print(f"[{timestamp}] [USER FEEDBACK] Rating: {payload.rating} | Improvement: {payload.improvement}")
-    append_to_user_logs(log_entry)
+    
+    # 1. Console print
+    print(f"[{timestamp}] [USER FEEDBACK] Rating: {payload.rating}/5 | Device: {payload.device_info} | Improvement: {payload.improvement}")
+    
+    # 2. Append directly to local submissions_log.json
+    append_to_submissions_log(log_entry)
+    
+    # 3. Dispatch real-time Telegram alert
+    alert_text = (
+        f"*💬 AAPNATRADER - NEW FEEDBACK RECEIVED*\n"
+        f"*Rating:* {payload.rating}/5\n"
+        f"*Time:* {timestamp}\n"
+        f"*Device:* `{payload.device_info}`\n\n"
+        f"*Improvement:* {payload.improvement}"
+    )
+    send_telegram_alert(alert_text)
+    
     return {"status": "success", "message": "Feedback Submitted! Thanks."}
+
 
 
 def get_nse_universe(universe_mode: str):

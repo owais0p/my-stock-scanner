@@ -2325,12 +2325,13 @@
                 e.preventDefault();
                 const category = document.getElementById('report-category').value;
                 const description = document.getElementById('report-description').value;
+                const device_info = `${navigator.userAgent} | Screen: ${window.screen.width}x${window.screen.height}`;
 
                 try {
                     const res = await fetch('/api/report', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ category, description })
+                        body: JSON.stringify({ category, description, device_info })
                     });
                     const data = await res.json();
                     if (data.status === 'success') {
@@ -2352,6 +2353,7 @@
                 e.preventDefault();
                 const rating = parseInt(feedbackRatingVal.value, 10);
                 const improvement = document.getElementById('feedback-improvement').value;
+                const device_info = `${navigator.userAgent} | Screen: ${window.screen.width}x${window.screen.height}`;
 
                 if (isNaN(rating) || rating < 1 || rating > 5) {
                     showToast('Please select a rating emoji.', 'error');
@@ -2362,7 +2364,7 @@
                     const res = await fetch('/api/feedback', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ rating, improvement })
+                        body: JSON.stringify({ rating, improvement, device_info })
                     });
                     const data = await res.json();
                     if (data.status === 'success') {
