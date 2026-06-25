@@ -1325,7 +1325,7 @@
             }
             activeBtn.className = activeClass;
 
-            triggerScan();
+            // triggerScan();
         }
 
         function generateSparklineSVG(history, change) {
@@ -2614,8 +2614,13 @@
         exportBtn.addEventListener('click', exportToCSV);
         strategyScannerBtn.addEventListener('click', () => updateStrategy('current'));
         strategyMomentumOpenBtn.addEventListener('click', () => updateStrategy('momentum_open_30'));
-        universeSelector.addEventListener('change', () => triggerScan());
-        document.getElementById('scan-combined-toggle').addEventListener('change', () => triggerScan());
+        // Clean Manual-Only Event Structure
+        universeSelector.addEventListener('change', () => {
+            // Just let the user change the selection option, do not auto-trigger scan
+        });
+        document.getElementById('scan-combined-toggle').addEventListener('change', () => {
+            // Just let the user change the toggle option, do not auto-trigger scan
+        });
 
         // Debounced Window Resize event listener to handle viewport changes smoothly
         window.addEventListener('resize', debounce(() => {
