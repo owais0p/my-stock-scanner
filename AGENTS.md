@@ -51,10 +51,12 @@ AAPNATRADER is a high-performance, institutional-grade stock scanning dashboard 
 
 ## 📈 Chart Annotation & Layout System
 - **Dashed Horizontal CMP Line**: Drawn using a line-only Y-axis annotation at `annotations.yaxis[0]` with `label.show: false` to force the dashed line to stretch 100% across the plotting area up to the right axis border.
-- **Y-Axis Price Badge**: Drawn using a secondary transparent-border annotation at `annotations.yaxis[1]` with `label.position: 'right'`, `label.textAnchor: 'start'`, and `label.offsetX: 52` to overlay a solid emerald green (`#10B981`) text badge exactly on the numeric scale without cluttering the candlestick canvas.
+- **Y-Axis Price Badge**: Drawn using a secondary transparent-border annotation at `annotations.yaxis[1]` with `label.position: 'right'`, `label.textAnchor: 'start'`, and `label.offsetX: 62` to overlay a solid emerald green (`#10B981`) text badge exactly on the numeric scale without cluttering the candlestick canvas.
 - **Timeframe Selector (1D / 1W / 1M)**: Executes an asynchronous backend fetch to query resampled historical OHLCV data. The backend retrieves the appropriate yfinance period (`6mo` for `1D`, `3y` for `1W`, `10y` for `1M`), processes Monday-aligned weekly and Month Start-aligned monthly grouping in Python, and returns exactly 120 candles. Clicks trigger dynamic series updates with `animate: false`.
+- **9 EMA & 20 EMA Line Overlays**: Plotted directly over the candlestick series. The 9 EMA uses color `#3b82f6` (Premium Light Blue) and the 20 EMA uses color `#f59e0b` (Amber Orange) with a stroke width of `1.5px` for both wicks/borders and line indicators. The chart series array accepts 4 inputs in sequence: `Price` (candlestick), `9 EMA` (line), `20 EMA` (line), and `Volume` (bar).
+- **Y-Axis Price Axis Sync Gating**: All chart interaction events (zoomed, scrolled, scaled, dragged, timeframe-switched, double-clicked) must specify a 4-item `yaxis` configuration array: the first three configurations match `seriesName: 'Price'` (with the second and third configurations hidden via `show: false`) to force the EMA lines to scale symmetrically with the candlesticks, and the fourth matches `seriesName: 'Volume'`.
 - **Y-Axis Volume Scale Lock**: Explicitly locks Volume Y-axis bounds (`min: 0, max: function(max) { return max * 3.0; }`) to constrain volume bars to the bottom 33% floor height, keeping them fully visible.
-- **Floating Legend & Grid Padding**: The legend floats on the top-right (`position: 'top', horizontalAlign: 'right', floating: true, offsetY: -10, offsetX: -10`) inline with controls. Grid bottom padding is set to `25` to stretch active bounds. Chart container wrappers are expanded to `h-[400px]` in list view and `h-[360px]` in grid view.
+- **Floating Legend & Grid Padding**: The legend floats on the top-left (`position: 'top', horizontalAlign: 'left', floating: true, offsetY: -5, offsetX: 10`) inline with controls. Grid bottom padding is set to `25` to stretch active bounds. Chart container wrappers are expanded to `h-[400px]` in list view and `h-[360px]` in grid view.
 
 ---
-*Last Updated: June 25, 2026*
+*Last Updated: June 26, 2026*

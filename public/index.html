@@ -1457,6 +1457,22 @@
             return monthlyOhlcv;
         }
 
+        function calculateEMA(prices, period) {
+            if (!prices || prices.length === 0) return [];
+            const k = 2 / (period + 1);
+            const emaValues = [];
+            let ema = prices[0];
+            for (let i = 0; i < prices.length; i++) {
+                if (i === 0) {
+                    emaValues.push(ema);
+                } else {
+                    ema = prices[i] * k + ema * (1 - k);
+                    emaValues.push(ema);
+                }
+            }
+            return emaValues;
+        }
+
         window.loadInteractiveChart = function(ticker, event) {
             if (event) event.stopPropagation();
             const containerId = `tv-chart-container-${ticker}`;
@@ -1518,6 +1534,20 @@
                 y: [row.open, row.high, row.low, row.close]
             }));
 
+            const closePrices = stockData.ohlcv.map(row => row.close);
+            const ema9Values = calculateEMA(closePrices, 9);
+            const ema20Values = calculateEMA(closePrices, 20);
+
+            const ema9SeriesData = stockData.ohlcv.map((row, idx) => ({
+                x: row.time,
+                y: ema9Values[idx]
+            }));
+
+            const ema20SeriesData = stockData.ohlcv.map((row, idx) => ({
+                x: row.time,
+                y: ema20Values[idx]
+            }));
+
             const volumeData = stockData.ohlcv.map(row => {
                 const isUp = row.close >= row.open;
                 return {
@@ -1539,6 +1569,16 @@
                         name: 'Price',
                         type: 'candlestick',
                         data: seriesData
+                    },
+                    {
+                        name: '9 EMA',
+                        type: 'line',
+                        data: ema9SeriesData
+                    },
+                    {
+                        name: '20 EMA',
+                        type: 'line',
+                        data: ema20SeriesData
                     },
                     {
                         name: 'Volume',
@@ -1580,6 +1620,9 @@
                                         opposite: true,
                                         forceNiceScale: true,
                                         labels: { 
+                                            formatter: function(val) {
+                                                return parseFloat(val).toFixed(2);
+                                            },
                                             style: { colors: isLight ? '#475569' : '#94a3b8', fontSize: '9px' },
                                             offsetX: -4
                                         },
@@ -1599,6 +1642,14 @@
                                         tooltip: {
                                             enabled: true
                                         }
+                                    },
+                                    {
+                                        seriesName: 'Price',
+                                        show: false
+                                    },
+                                    {
+                                        seriesName: 'Price',
+                                        show: false
                                     },
                                     {
                                         seriesName: 'Volume',
@@ -1620,6 +1671,9 @@
                                         opposite: true,
                                         forceNiceScale: true,
                                         labels: { 
+                                            formatter: function(val) {
+                                                return parseFloat(val).toFixed(2);
+                                            },
                                             style: { colors: isLight ? '#475569' : '#94a3b8', fontSize: '9px' },
                                             offsetX: -4
                                         },
@@ -1641,6 +1695,14 @@
                                         }
                                     },
                                     {
+                                        seriesName: 'Price',
+                                        show: false
+                                    },
+                                    {
+                                        seriesName: 'Price',
+                                        show: false
+                                    },
+                                    {
                                         seriesName: 'Volume',
                                         show: false,
                                         min: 0,
@@ -1653,10 +1715,12 @@
                     }
                 },
                 stroke: {
-                    width: [1.3, 0] // 1.3px border/wick for candles, 0px border for volume bars
+                    width: [1.5, 1.5, 1.5, 0] // 1.5px border/wick for candles and lines, 0px border for volume bars
                 },
                 colors: [
                     isLight ? '#059669' : '#10B981',
+                    '#3b82f6', // 9 EMA
+                    '#f59e0b', // 20 EMA
                     isLight ? 'rgba(71, 85, 105, 0.18)' : 'rgba(148, 163, 184, 0.15)'
                 ],
                 plotOptions: {
@@ -1692,7 +1756,7 @@
                                 text: lastClosePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                 position: 'right',
                                 textAnchor: 'start',
-                                offsetX: 52,
+                                offsetX: 62,
                                 style: {
                                     color: '#fff',
                                     background: '#10B981',
@@ -1729,6 +1793,9 @@
                         opposite: true,
                         forceNiceScale: true,
                         labels: { 
+                            formatter: function(val) {
+                                return parseFloat(val).toFixed(2);
+                            },
                             style: { colors: isLight ? '#475569' : '#94a3b8', fontSize: '9px' },
                             offsetX: -4 // Nudges numeric labels slightly for edge clearance
                         },
@@ -1748,6 +1815,14 @@
                         tooltip: {
                             enabled: true
                         }
+                    },
+                    {
+                        seriesName: 'Price',
+                        show: false
+                    },
+                    {
+                        seriesName: 'Price',
+                        show: false
                     },
                     {
                         seriesName: 'Volume',
@@ -1776,6 +1851,18 @@
                             // Price series (candlestick) - default format
                         },
                         {
+                            // 9 EMA
+                            formatter: function (val) {
+                                return val !== undefined && val !== null ? val.toFixed(2) : '';
+                            }
+                        },
+                        {
+                            // 20 EMA
+                            formatter: function (val) {
+                                return val !== undefined && val !== null ? val.toFixed(2) : '';
+                            }
+                        },
+                        {
                             // Volume series
                             formatter: function (val) {
                                 if (val >= 10000000) return (val / 10000000).toFixed(2) + ' Cr';
@@ -1789,13 +1876,12 @@
                 legend: {
                     show: true,
                     position: 'top',
-                    horizontalAlign: 'right',
+                    horizontalAlign: 'left', // Shift left to clear space for annotations text tags
                     floating: true,
-                    offsetX: -10,
-                    offsetY: -10, // Adjust so it sits perfectly inline next to timeframes or indicators without creating a new block row
+                    offsetY: -5,
+                    offsetX: 10,
                     fontSize: '10px',
-                    fontFamily: 'Inter, sans-serif',
-                    fontWeight: 600,
+                    fontFamily: 'JetBrains Mono, monospace',
                     labels: {
                         colors: isLight ? '#475569' : '#94a3b8'
                     },
@@ -1872,7 +1958,22 @@
                                 opposite: true,
                                 forceNiceScale: false,
                                 min: newMin,
-                                max: newMax
+                                max: newMax,
+                                labels: {
+                                    formatter: function(val) {
+                                        return parseFloat(val).toFixed(2);
+                                    },
+                                    style: { colors: isLight ? '#475569' : '#94a3b8', fontSize: '9px' },
+                                    offsetX: -4
+                                }
+                            },
+                            {
+                                seriesName: 'Price',
+                                show: false
+                            },
+                            {
+                                seriesName: 'Price',
+                                show: false
                             },
                             {
                                 seriesName: 'Volume',
@@ -1901,7 +2002,14 @@
                     opposite: true,
                     forceNiceScale: false,
                     crosshairs: { show: true, enabled: true, tooltip: { enabled: true } },
-                    tooltip: { enabled: true }
+                    tooltip: { enabled: true },
+                    labels: {
+                        formatter: function(val) {
+                            return parseFloat(val).toFixed(2);
+                        },
+                        style: { colors: isLight ? '#475569' : '#94a3b8', fontSize: '9px' },
+                        offsetX: -4
+                    }
                 };
 
                 if (lastCalculatedMin !== null && lastCalculatedMax !== null) {
@@ -1914,6 +2022,14 @@
                     xaxis: { crosshairs: { show: true, enabled: true } },
                     yaxis: [
                         yaxisPriceConfig,
+                        {
+                            seriesName: 'Price',
+                            show: false
+                        },
+                        {
+                            seriesName: 'Price',
+                            show: false
+                        },
                         {
                             seriesName: 'Volume',
                             show: false,
@@ -1960,7 +2076,22 @@
                                 opposite: true,
                                 forceNiceScale: false,
                                 min: newMinY,
-                                max: newMaxY
+                                max: newMaxY,
+                                labels: {
+                                    formatter: function(val) {
+                                        return parseFloat(val).toFixed(2);
+                                    },
+                                    style: { colors: isLight ? '#475569' : '#94a3b8', fontSize: '9px' },
+                                    offsetX: -4
+                                }
+                            },
+                            {
+                                seriesName: 'Price',
+                                show: false
+                            },
+                            {
+                                seriesName: 'Price',
+                                show: false
                             },
                             {
                                 seriesName: 'Volume',
@@ -1989,7 +2120,14 @@
                     opposite: true,
                     forceNiceScale: false,
                     crosshairs: { show: true, enabled: true, tooltip: { enabled: true } },
-                    tooltip: { enabled: true }
+                    tooltip: { enabled: true },
+                    labels: {
+                        formatter: function(val) {
+                            return parseFloat(val).toFixed(2);
+                        },
+                        style: { colors: isLight ? '#475569' : '#94a3b8', fontSize: '9px' },
+                        offsetX: -4
+                    }
                 };
 
                 if (lastCalculatedMin !== null && lastCalculatedMax !== null) {
@@ -2002,6 +2140,14 @@
                     xaxis: { crosshairs: { show: true, enabled: true } },
                     yaxis: [
                         yaxisPriceConfig,
+                        {
+                            seriesName: 'Price',
+                            show: false
+                        },
+                        {
+                            seriesName: 'Price',
+                            show: false
+                        },
                         {
                             seriesName: 'Volume',
                             show: false,
@@ -2045,7 +2191,22 @@
                                 seriesName: 'Price',
                                 opposite: true,
                                 crosshairs: { show: false, enabled: false, tooltip: { enabled: false } },
-                                tooltip: { enabled: false }
+                                tooltip: { enabled: false },
+                                labels: {
+                                    formatter: function(val) {
+                                        return parseFloat(val).toFixed(2);
+                                    },
+                                    style: { colors: isLight ? '#475569' : '#94a3b8', fontSize: '9px' },
+                                    offsetX: -4
+                                }
+                            },
+                            {
+                                seriesName: 'Price',
+                                show: false
+                            },
+                            {
+                                seriesName: 'Price',
+                                show: false
                             },
                             {
                                 seriesName: 'Volume',
@@ -2079,7 +2240,22 @@
                                     seriesName: 'Price',
                                     opposite: true,
                                     crosshairs: { show: false, enabled: false, tooltip: { enabled: false } },
-                                    tooltip: { enabled: false }
+                                    tooltip: { enabled: false },
+                                    labels: {
+                                        formatter: function(val) {
+                                            return parseFloat(val).toFixed(2);
+                                        },
+                                        style: { colors: isLight ? '#475569' : '#94a3b8', fontSize: '9px' },
+                                        offsetX: -4
+                                    }
+                                },
+                                {
+                                    seriesName: 'Price',
+                                    show: false
+                                },
+                                {
+                                    seriesName: 'Price',
+                                    show: false
                                 },
                                 {
                                     seriesName: 'Volume',
@@ -2113,6 +2289,14 @@
                             max: undefined,
                             crosshairs: { show: true, enabled: true, tooltip: { enabled: true } },
                             tooltip: { enabled: true }
+                        },
+                        {
+                            seriesName: 'Price',
+                            show: false
+                        },
+                        {
+                            seriesName: 'Price',
+                            show: false
                         },
                         {
                             seriesName: 'Volume',
@@ -2172,6 +2356,20 @@
                 y: [row.open, row.high, row.low, row.close]
             }));
 
+            const closePrices = ohlcvData.map(row => row.close);
+            const ema9Values = calculateEMA(closePrices, 9);
+            const ema20Values = calculateEMA(closePrices, 20);
+
+            const ema9SeriesData = ohlcvData.map((row, idx) => ({
+                x: row.time,
+                y: ema9Values[idx]
+            }));
+
+            const ema20SeriesData = ohlcvData.map((row, idx) => ({
+                x: row.time,
+                y: ema20Values[idx]
+            }));
+
             const volumeData = ohlcvData.map(row => {
                 const isUp = row.close >= row.open;
                 return {
@@ -2189,6 +2387,16 @@
                     name: 'Price',
                     type: 'candlestick',
                     data: seriesData
+                },
+                {
+                    name: '9 EMA',
+                    type: 'line',
+                    data: ema9SeriesData
+                },
+                {
+                    name: '20 EMA',
+                    type: 'line',
+                    data: ema20SeriesData
                 },
                 {
                     name: 'Volume',
@@ -2213,9 +2421,20 @@
                         opposite: true,
                         forceNiceScale: true,
                         labels: { 
+                            formatter: function(val) {
+                                return parseFloat(val).toFixed(2);
+                            },
                             style: { colors: isLight ? '#475569' : '#94a3b8', fontSize: '9px' },
                             offsetX: -4
                         }
+                    },
+                    {
+                        seriesName: 'Price',
+                        show: false
+                    },
+                    {
+                        seriesName: 'Price',
+                        show: false
                     },
                     {
                         seriesName: 'Volume',
@@ -2243,7 +2462,7 @@
                                 text: lastClosePrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
                                 position: 'right',
                                 textAnchor: 'start',
-                                offsetX: 52,
+                                offsetX: 62,
                                 style: {
                                     color: '#fff',
                                     background: '#10B981',

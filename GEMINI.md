@@ -25,8 +25,8 @@
 - **Local Preview**: Use `py -m uvicorn api.index:app --reload --port 7860` for local development.
 - **Performance**: Theme toggles are optimized via hardware-accelerated `.theme-transition` classes; avoid universal `*` transitions.
 - **Data Export**: Client-side CSV generation using Browser Blobs for zero-cost data handling.
-- **Chart Analysis**: Renders interactive ApexCharts candlestick + volume charts inline, supporting vertical scaling via Y-axis drag and right Y-axis scale price badges. Includes TradingView-style interactive timeframe selection options (1D, 1W, 1M) powered by server-side dynamic fetching and resampling (using `6mo`/`3y`/`10y` database periods to serve exactly 120 candles).
-- **Y-Axis Volume Scale Lock**: When changing timeframes, the Volume Y-axis scale is explicitly locked (`min: 0, max: function(max) { return max * 3.0; }`) to keep the volume bars constrained to the bottom 33% floor height so they remain completely visible and do not overlap price wicks.
+- **Chart Analysis**: Renders interactive ApexCharts candlestick + volume charts inline, supporting vertical scaling via Y-axis drag and right Y-axis scale price badges. Automatically calculates and displays the 9 EMA (Premium Light Blue `#3b82f6`) and 20 EMA (Amber Orange `#f59e0b`) overlay lines on the candlestick charts. Includes TradingView-style interactive timeframe selection options (1D, 1W, 1M) powered by server-side dynamic fetching and resampling (using `6mo`/`3y`/`10y` database periods to serve exactly 120 candles).
+- **Y-Axis Volume & EMA Scale Lock**: When changing timeframes or interacting with the chart, the Volume Y-axis scale is explicitly locked (`min: 0, max: function(max) { return max * 3.0; }`) to keep the volume bars constrained to the bottom 33% floor height. All EMA lines are synced to the primary `Price` Y-axis scale via a 4-item `yaxis` configuration array to scale symmetrically with the candlesticks.
 
 ## Design Standards
 - **Brand**: AAPNA (White/Slate) TRADER (Emerald) two-tone identity.
@@ -34,7 +34,7 @@
 - **Branding**: Official logo is integrated as an inline SVG with `currentColor` support for theme-aware high contrast. Favicon updates dynamically via JS on theme toggle.
 - **Typography**: Inter for UI headers/body, JetBrains Mono for financial data, metrics, and tickers.
 - **Components**: Responsive dual-pane terminal grid (MD breakpoint) with a pinned command center and a results deck. Interactive UI elements use `cyber-checkbox` styling. Card headers contain `1D` and dynamic `NSE` or `BSE` monospace metadata badges next to the stock name headers.
-- **Chart Axis & Legend layout**: Uses a dual-annotation pattern on the Y-axis: index 0 renders the 100% width dashed CMP line with its label disabled, and index 1 renders the text price tag offset to overlay directly on the Y-axis scale (`offsetX: 52`). The legend is configured to float inline at the top-right corner (`position: 'top', horizontalAlign: 'right', floating: true, offsetY: -10, offsetX: -10`) with `grid.padding.bottom` set to `25` to prevent vertical compression or baseline volume bar clipping. Chart containers are set to `h-[400px]` in list view and `h-[360px]` in grid view.
+- **Chart Axis & Legend layout**: Uses a dual-annotation pattern on the Y-axis: index 0 renders the 100% width dashed CMP line with its label disabled, and index 1 renders the text price tag offset to overlay directly on the Y-axis scale (`offsetX: 62`). The legend is configured to float inline at the top-left corner (`position: 'top', horizontalAlign: 'left', floating: true, offsetY: -5, offsetX: 10`) with `grid.padding.bottom` set to `25` to prevent vertical compression or baseline volume bar clipping. Chart containers are set to `h-[400px]` in list view and `h-[360px]` in grid view.
 
 ## Deployment Notes
 - Hugging Face Spaces expects the app to run on port `7860`.
