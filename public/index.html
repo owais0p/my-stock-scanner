@@ -1845,7 +1845,12 @@
                     theme: isLight ? 'light' : 'dark',
                     shared: true,
                     intersect: false,
-                    followCursor: true, // Forces tooltip card to follow user crosshair/cursor
+                    fixed: {
+                        enabled: true,
+                        position: 'topRight',
+                        offsetX: -80,
+                        offsetY: 10
+                    },
                     custom: function({ series, seriesIndex, dataPointIndex, w }) {
                         const ohlcv = w.config.series[0].data[dataPointIndex]?.y;
                         const ema9Val = w.config.series[1].data[dataPointIndex]?.y;
@@ -1871,15 +1876,21 @@
                         }
 
                         return `
-                            <div class="p-2 border border-slate-200/10 dark:border-slate-700/30 bg-slate-900/90 dark:bg-slate-950/60 backdrop-blur-md rounded-lg font-mono text-[10px] text-slate-200 shadow-xl select-none pointer-events-none">
-                                <div class="font-bold text-slate-400 mb-1">${date}</div>
-                                <div><span class="text-emerald-400">O:</span> ${open} <span class="text-emerald-400">H:</span> ${high}</div>
-                                <div><span class="text-rose-400">L:</span> ${low} <span class="text-emerald-400">C:</span> ${close}</div>
-                                <div class="flex gap-2 text-[9px] text-slate-300 mt-1 border-t border-slate-700/20 pt-1">
-                                    <span><span class="text-[#3b82f6]">9 EMA:</span> ${ema9}</span>
-                                    <span><span class="text-[#f59e0b]">20 EMA:</span> ${ema20}</span>
+                            <div class="p-1.5 md:p-2 border border-slate-200/10 dark:border-slate-700/30 bg-slate-900/90 dark:bg-slate-950/60 backdrop-blur-md rounded-lg font-mono text-[9px] md:text-[10px] text-slate-200 shadow-xl select-none pointer-events-none flex flex-col gap-0.5 md:gap-1">
+                                <div class="font-bold text-slate-400 border-b border-slate-700/20 pb-0.5 mb-0.5">${date}</div>
+                                <div class="flex gap-2">
+                                    <span><span class="text-emerald-400">O:</span>${open}</span>
+                                    <span><span class="text-emerald-400">H:</span>${high}</span>
                                 </div>
-                                <div class="text-slate-400 mt-1">Vol: ${formattedVol}</div>
+                                <div class="flex gap-2">
+                                    <span><span class="text-rose-400">L:</span>${low}</span>
+                                    <span><span class="text-emerald-400">C:</span>${close}</span>
+                                </div>
+                                <div class="flex gap-x-2 text-[8px] md:text-[9px] text-slate-300 border-t border-slate-700/20 pt-0.5 mt-0.5">
+                                    <span><span class="text-[#3b82f6]">9EMA:</span>${ema9}</span>
+                                    <span><span class="text-[#f59e0b]">20EMA:</span>${ema20}</span>
+                                </div>
+                                <div class="text-slate-400 text-[8px] md:text-[9px]">Vol: ${formattedVol}</div>
                             </div>
                         `;
                     }
