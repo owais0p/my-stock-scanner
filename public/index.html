@@ -1655,7 +1655,7 @@
                                         seriesName: 'Volume',
                                         show: false,
                                         min: 0,
-                                        max: function(max) { return max * 3.0; }
+                                        max: function(max) { return max * 1.35; }
                                     }
                                 ]
                             }, false, false, false);
@@ -1706,7 +1706,7 @@
                                         seriesName: 'Volume',
                                         show: false,
                                         min: 0,
-                                        max: function(max) { return max * 3.0; }
+                                        max: function(max) { return max * 1.35; }
                                     }
                                 ]
                             }, false, false, false);
@@ -1828,7 +1828,7 @@
                         seriesName: 'Volume',
                         show: false,
                         min: 0,
-                        max: function(max) { return max * 3.0; } // Volume bars occupy up to 33% height of the chart floor
+                        max: function(max) { return max * 1.35; } // Enforces a much tighter ceiling, forcing the lower volume bars to stretch up prominently
                     }
                 ],
                 grid: {
@@ -1836,8 +1836,8 @@
                     padding: {
                         left: 4,
                         right: 80, // Safe margin for Y-axis labels and annotations
-                        top: 10,
-                        bottom: 25 // Set to stretch active layout bounds and prevent clipping of volume bars
+                        top: 15,
+                        bottom: 15
                     }
                 },
                 tooltip: { 
@@ -1845,33 +1845,44 @@
                     theme: isLight ? 'light' : 'dark',
                     shared: true,
                     intersect: false,
-                    followCursor: !isMobile,
-                    y: [
-                        {
-                            // Price series (candlestick) - default format
-                        },
-                        {
-                            // 9 EMA
-                            formatter: function (val) {
-                                return val !== undefined && val !== null ? val.toFixed(2) : '';
-                            }
-                        },
-                        {
-                            // 20 EMA
-                            formatter: function (val) {
-                                return val !== undefined && val !== null ? val.toFixed(2) : '';
-                            }
-                        },
-                        {
-                            // Volume series
-                            formatter: function (val) {
-                                if (val >= 10000000) return (val / 10000000).toFixed(2) + ' Cr';
-                                if (val >= 100000) return (val / 100000).toFixed(2) + ' L';
-                                if (val >= 1000) return (val / 1000).toFixed(2) + ' K';
-                                return val;
-                            }
+                    followCursor: true, // Forces tooltip card to follow user crosshair/cursor
+                    custom: function({ series, seriesIndex, dataPointIndex, w }) {
+                        const ohlcv = w.config.series[0].data[dataPointIndex]?.y;
+                        const ema9Val = w.config.series[1].data[dataPointIndex]?.y;
+                        const ema20Val = w.config.series[2].data[dataPointIndex]?.y;
+                        const volVal = w.config.series[3].data[dataPointIndex]?.y;
+                        const date = w.config.series[0].data[dataPointIndex]?.x;
+
+                        if (!ohlcv) return '';
+
+                        const open = ohlcv[0] !== undefined ? ohlcv[0].toFixed(2) : '';
+                        const high = ohlcv[1] !== undefined ? ohlcv[1].toFixed(2) : '';
+                        const low = ohlcv[2] !== undefined ? ohlcv[2].toFixed(2) : '';
+                        const close = ohlcv[3] !== undefined ? ohlcv[3].toFixed(2) : '';
+                        const ema9 = ema9Val !== undefined && ema9Val !== null ? ema9Val.toFixed(2) : 'N/A';
+                        const ema20 = ema20Val !== undefined && ema20Val !== null ? ema20Val.toFixed(2) : 'N/A';
+                        
+                        let formattedVol = '';
+                        if (volVal !== undefined && volVal !== null) {
+                            if (volVal >= 10000000) formattedVol = (volVal / 10000000).toFixed(2) + ' Cr';
+                            else if (volVal >= 100000) formattedVol = (volVal / 100000).toFixed(2) + ' L';
+                            else if (volVal >= 1000) formattedVol = (volVal / 1000).toFixed(2) + ' K';
+                            else formattedVol = volVal.toLocaleString('en-IN');
                         }
-                    ]
+
+                        return `
+                            <div class="p-2 border border-slate-200/10 dark:border-slate-700/30 bg-slate-900/90 dark:bg-slate-950/60 backdrop-blur-md rounded-lg font-mono text-[10px] text-slate-200 shadow-xl select-none pointer-events-none">
+                                <div class="font-bold text-slate-400 mb-1">${date}</div>
+                                <div><span class="text-emerald-400">O:</span> ${open} <span class="text-emerald-400">H:</span> ${high}</div>
+                                <div><span class="text-rose-400">L:</span> ${low} <span class="text-emerald-400">C:</span> ${close}</div>
+                                <div class="flex gap-2 text-[9px] text-slate-300 mt-1 border-t border-slate-700/20 pt-1">
+                                    <span><span class="text-[#3b82f6]">9 EMA:</span> ${ema9}</span>
+                                    <span><span class="text-[#f59e0b]">20 EMA:</span> ${ema20}</span>
+                                </div>
+                                <div class="text-slate-400 mt-1">Vol: ${formattedVol}</div>
+                            </div>
+                        `;
+                    }
                 },
                 legend: {
                     show: true,
@@ -2034,7 +2045,7 @@
                             seriesName: 'Volume',
                             show: false,
                             min: 0,
-                            max: function(max) { return max * 3.0; }
+                            max: function(max) { return max * 1.35; }
                         }
                     ]
                 }, false, false, false);
@@ -2152,7 +2163,7 @@
                             seriesName: 'Volume',
                             show: false,
                             min: 0,
-                            max: function(max) { return max * 3.0; }
+                            max: function(max) { return max * 1.35; }
                         }
                     ]
                 }, false, false, false);
@@ -2302,7 +2313,7 @@
                             seriesName: 'Volume',
                             show: false,
                             min: 0,
-                            max: function(max) { return max * 3.0; }
+                            max: function(max) { return max * 1.35; }
                         }
                     ]
                 }, false, false, false);
@@ -2440,7 +2451,7 @@
                         seriesName: 'Volume',
                         show: false,
                         min: 0,
-                        max: function(max) { return max * 3.0; }
+                        max: function(max) { return max * 1.35; }
                     }
                 ],
                 annotations: {

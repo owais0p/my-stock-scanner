@@ -26,7 +26,7 @@
 - **Performance**: Theme toggles are optimized via hardware-accelerated `.theme-transition` classes; avoid universal `*` transitions.
 - **Data Export**: Client-side CSV generation using Browser Blobs for zero-cost data handling.
 - **Chart Analysis**: Renders interactive ApexCharts candlestick + volume charts inline, supporting vertical scaling via Y-axis drag and right Y-axis scale price badges. Automatically calculates and displays the 9 EMA (Premium Light Blue `#3b82f6`) and 20 EMA (Amber Orange `#f59e0b`) overlay lines on the candlestick charts. Includes TradingView-style interactive timeframe selection options (1D, 1W, 1M) powered by server-side dynamic fetching and resampling (using `6mo`/`3y`/`10y` database periods to serve exactly 120 candles).
-- **Y-Axis Volume & EMA Scale Lock**: When changing timeframes or interacting with the chart, the Volume Y-axis scale is explicitly locked (`min: 0, max: function(max) { return max * 3.0; }`) to keep the volume bars constrained to the bottom 33% floor height. All EMA lines are synced to the primary `Price` Y-axis scale via a 4-item `yaxis` configuration array to scale symmetrically with the candlesticks.
+- **Y-Axis Volume & EMA Scale Lock**: When changing timeframes or interacting with the chart, the Volume Y-axis scale is explicitly locked (`min: 0, max: function(max) { return max * 1.35; }`) to keep the volume bars constrained to occupy a 20-25% height ratio of the viewport. All EMA lines are synced to the primary `Price` Y-axis scale via a 4-item `yaxis` configuration array to scale symmetrically with the candlesticks.
 
 ## Design Standards
 - **Brand**: AAPNA (White/Slate) TRADER (Emerald) two-tone identity.
