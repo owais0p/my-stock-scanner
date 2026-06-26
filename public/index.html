@@ -136,7 +136,7 @@
         body.light-theme .brand-text span:first-child { color: #0f172a !important; }
         
         body.light-theme .card-anim h3,
-        body.light-theme .card-anim span:not(.text-accent):not(.signal-up):not(.signal-down) { color: #0f172a !important; }
+        body.light-theme .card-anim span:not(.text-accent):not(.signal-up):not(.signal-down):not(.tooltip-emerald):not(.tooltip-rose):not(.tooltip-blue):not(.tooltip-amber) { color: #0f172a !important; }
 
         body.light-theme .tactical-card { 
             background: #ffffff !important; 
@@ -429,6 +429,26 @@
             background-color: #059669;
             box-shadow: 0 0 10px rgba(5, 150, 105, 0.6);
         }
+
+        /* Custom Tooltip Wrapper Styling (Removes default library containers to prevent styling leak) */
+        .apexcharts-tooltip {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Tooltip Label Colors (Uses !important to bypass wildcard color overrides in Light Theme) */
+        .tooltip-emerald { color: #059669 !important; }
+        .dark .tooltip-emerald { color: #10B981 !important; }
+
+        .tooltip-rose { color: #dc2626 !important; }
+        .dark .tooltip-rose { color: #f87171 !important; }
+
+        .tooltip-blue { color: #2563eb !important; }
+        .dark .tooltip-blue { color: #3b82f6 !important; }
+
+        .tooltip-amber { color: #d97706 !important; }
+        .dark .tooltip-amber { color: #f59e0b !important; }
 
         /* Custom Y-Axis Tooltip Styling for Contrast (Global) */
         .apexcharts-yaxistooltip {
@@ -1876,21 +1896,21 @@
                         }
 
                         return `
-                            <div class="p-1.5 md:p-2 border border-slate-200/10 dark:border-slate-700/30 bg-slate-900/90 dark:bg-slate-950/60 backdrop-blur-md rounded-lg font-mono text-[9px] md:text-[10px] text-slate-200 shadow-xl select-none pointer-events-none flex flex-col gap-0.5 md:gap-1">
-                                <div class="font-bold text-slate-400 border-b border-slate-700/20 pb-0.5 mb-0.5">${date}</div>
+                            <div class="p-1.5 md:p-2 border border-slate-200 dark:border-slate-800/60 bg-white/95 dark:bg-slate-950/80 backdrop-blur-md rounded-lg font-mono text-[9px] md:text-[10px] text-slate-800 dark:text-slate-200 shadow-xl select-none pointer-events-none flex flex-col gap-0.5 md:gap-1">
+                                <div class="font-bold text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800/40 pb-0.5 mb-0.5">${date}</div>
                                 <div class="flex gap-2">
-                                    <span><span class="text-emerald-400">O:</span>${open}</span>
-                                    <span><span class="text-emerald-400">H:</span>${high}</span>
+                                    <span><span class="tooltip-emerald font-bold">O:</span>${open}</span>
+                                    <span><span class="tooltip-emerald font-bold">H:</span>${high}</span>
                                 </div>
                                 <div class="flex gap-2">
-                                    <span><span class="text-rose-400">L:</span>${low}</span>
-                                    <span><span class="text-emerald-400">C:</span>${close}</span>
+                                    <span><span class="tooltip-rose font-bold">L:</span>${low}</span>
+                                    <span><span class="tooltip-emerald font-bold">C:</span>${close}</span>
                                 </div>
-                                <div class="flex gap-x-2 text-[8px] md:text-[9px] text-slate-300 border-t border-slate-700/20 pt-0.5 mt-0.5">
-                                    <span><span class="text-[#3b82f6]">9EMA:</span>${ema9}</span>
-                                    <span><span class="text-[#f59e0b]">20EMA:</span>${ema20}</span>
+                                <div class="flex gap-x-2 text-[8px] md:text-[9px] text-slate-600 dark:text-slate-300 border-t border-slate-200 dark:border-slate-800/40 pt-0.5 mt-0.5">
+                                    <span><span class="tooltip-blue font-bold">9EMA:</span>${ema9}</span>
+                                    <span><span class="tooltip-amber font-bold">20EMA:</span>${ema20}</span>
                                 </div>
-                                <div class="text-slate-400 text-[8px] md:text-[9px]">Vol: ${formattedVol}</div>
+                                <div class="text-slate-500 dark:text-slate-400 text-[8px] md:text-[9px]">Vol: ${formattedVol}</div>
                             </div>
                         `;
                     }
