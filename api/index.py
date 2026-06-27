@@ -277,6 +277,9 @@ async def run_scan(
     consolidation_range: float = Query(10.0),   
     swing_run_pct: float = Query(15.0),         
     base_pullback_pct: float = Query(15.0),     
+    pullback_offset: int = Query(20),
+    swing_gate_pct: float = Query(0.0),
+    weekly_close_n: int = Query(2),
     
     # Toggle Switches (1 = ON, 0 = OFF)
     use_ema_filter: int = Query(1),
@@ -284,6 +287,9 @@ async def run_scan(
     use_consolidation: int = Query(1),
     use_swing_run: int = Query(1),
     use_base_pullback: int = Query(1),
+    use_pullback_zone: int = Query(0),
+    use_weekly_close_gate: int = Query(0),
+    use_auto_pullback: int = Query(0),
     scan_bse: int = Query(0),
     scan_combined: int = Query(0)
 ):
@@ -295,7 +301,12 @@ async def run_scan(
     elif timeframe == "1M":
         period = "10y"
     else:
-        period = "6mo"
+        if use_weekly_close_gate == 1 and weekly_close_n > 20:
+            period = "2y"
+        elif use_weekly_close_gate == 1 and weekly_close_n > 10:
+            period = "1y"
+        else:
+            period = "6mo"
 
     if scan_combined == 1:
         nse_tickers = get_nse_universe(universe)
@@ -422,6 +433,57 @@ async def run_scan(
                 distance_from_base_pct = ((last_close - recent_base_level) / recent_base_level) * 100
                 if distance_from_base_pct > base_pullback_pct: continue
 
+            # 6. MODULAR 2ND LAST PULLBACK ZONE FILTER LOGIC
+            if use_pullback_zone == 1:
+                if len(df_calc) >= 20 + pullback_offset:
+                    L2 = df_calc["Low"].iloc[-20 - pullback_offset : -pullback_offset].min()
+                    if not (last_close >= L2 * (1 + swing_gate_pct / 100)):
+                        continue
+                else:
+                    continue
+
+            # 6b. AUTOMATIC 2ND PULLBACK FILTER LOGIC
+            if use_auto_pullback == 1:
+                if len(df_calc) >= 30:
+                    dist_to_ema = (df_calc["Low"] - ema_s_series).abs()
+                    L1_date = dist_to_ema.iloc[-25:].idxmin()
+                    L1_idx = df_calc.index.get_loc(L1_date)
+                    df_prev = df_calc.iloc[:L1_idx]
+                    
+                    if len(df_prev) >= 5:
+                        pivots = []
+                        for i in range(2, len(df_prev) - 2):
+                            window = df_prev["Low"].iloc[i-2 : i+3]
+                            if df_prev["Low"].iloc[i] == window.min():
+                                pivots.append(float(df_prev["Low"].iloc[i]))
+                        
+                        if pivots:
+                            L2 = pivots[-1]
+                        else:
+                            L2 = float(df_prev["Low"].iloc[-30:].min())
+                        
+                        if not (L2 * 0.98 <= last_close <= L2 * 1.15):
+                            continue
+                    else:
+                        continue
+                else:
+                    continue
+
+            # 7. WEEKLY CLOSE GATE FILTER LOGIC
+            if use_weekly_close_gate == 1:
+                df_w = df.copy()
+                df_w.index = pd.to_datetime(df_w.index)
+                df_w['monday'] = df_w.index.map(lambda d: d - pd.Timedelta(days=d.weekday()))
+                grouped_w = df_w.groupby('monday').agg({'Close': 'last'}).sort_index()
+                
+                if len(grouped_w) > weekly_close_n:
+                    current_w_close = float(grouped_w['Close'].iloc[-1])
+                    n_weeks_ago_close = float(grouped_w['Close'].iloc[-1 - weekly_close_n])
+                    if not (current_w_close > n_weeks_ago_close):
+                        continue
+                else:
+                    continue
+
             # ----------------------------------------------------
             # PAYLOAD COMPILING
             # ----------------------------------------------------
@@ -434,6 +496,9 @@ async def run_scan(
             if use_consolidation == 1: active_custom_filters.append("Consol")
             if use_swing_run == 1: active_custom_filters.append("Swing")
             if use_base_pullback == 1: active_custom_filters.append("Base")
+            if use_pullback_zone == 1: active_custom_filters.append("Pullback")
+            if use_auto_pullback == 1: active_custom_filters.append("AutoPB")
+            if use_weekly_close_gate == 1: active_custom_filters.append(f"WGate({weekly_close_n})")
             
             setup_label = " | ".join(active_custom_filters) if active_custom_filters else "Pure Base Strategy"
             history_prices = [

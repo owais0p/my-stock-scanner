@@ -789,6 +789,47 @@
                             </label>
                         </div>
                     </div>
+
+                    <!-- Row 5: 2nd Last Pullback Zone -->
+                    <div class="grid grid-cols-12 gap-2 items-end">
+                        <div class="col-span-3 space-y-1">
+                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest ml-1">Pullback Offset (L2)</label>
+                            <input type="number" id="pullback_offset" value="20" 
+                                class="w-full bg-slate-100/50 dark:bg-background border border-slate-200 dark:border-border text-slate-800 dark:text-slate-300 py-2.5 px-3 rounded text-[10px] font-mono font-bold focus:outline-none focus:border-accent transition-all appearance-none">
+                        </div>
+                        <div class="col-span-3 space-y-1">
+                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest ml-1">Swing Gate Value %</label>
+                            <input type="number" id="swing_gate_pct" value="0.0" step="0.5"
+                                class="w-full bg-slate-100/50 dark:bg-background border border-slate-200 dark:border-border text-slate-800 dark:text-slate-300 py-2.5 px-3 rounded text-[10px] font-mono font-bold focus:outline-none focus:border-accent transition-all appearance-none">
+                        </div>
+                        <div class="col-span-3 pb-1">
+                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" id="use_pullback_zone" class="cyber-checkbox">
+                                2nd Pullback Zone
+                            </label>
+                        </div>
+                        <div class="col-span-3 pb-1">
+                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" id="use_auto_pullback" class="cyber-checkbox">
+                                Auto Pullback
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Row 6: Weekly Close Gate -->
+                    <div class="grid grid-cols-12 gap-2 items-end">
+                        <div class="col-span-4 space-y-1">
+                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest ml-1">Weeks Number (N)</label>
+                            <input type="number" id="weekly_close_n" value="2" 
+                                class="w-full bg-slate-100/50 dark:bg-background border border-slate-200 dark:border-border text-slate-800 dark:text-slate-300 py-2.5 px-3 rounded text-[10px] font-mono font-bold focus:outline-none focus:border-accent transition-all appearance-none">
+                        </div>
+                        <div class="col-span-8 pb-1">
+                            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest ml-1 flex items-center gap-1.5 cursor-pointer">
+                                <input type="checkbox" id="use_weekly_close_gate" class="cyber-checkbox">
+                                Weekly Close Gate
+                            </label>
+                        </div>
+                    </div>
                 </div>
                 </div>
 
@@ -1054,6 +1095,9 @@
                 document.getElementById('use_consolidation').checked = false;
                 document.getElementById('use_swing_run').checked = false;
                 document.getElementById('use_base_pullback').checked = false;
+                document.getElementById('use_pullback_zone').checked = false;
+                document.getElementById('use_weekly_close_gate').checked = false;
+                document.getElementById('use_auto_pullback').checked = false;
             } else {
                 advancedFiltersPanel.classList.remove('max-h-[1000px]', 'opacity-100');
                 advancedFiltersPanel.classList.add('max-h-0', 'opacity-0');
@@ -1067,6 +1111,9 @@
                 document.getElementById('use_consolidation').checked = false;
                 document.getElementById('use_swing_run').checked = false;
                 document.getElementById('use_base_pullback').checked = false;
+                document.getElementById('use_pullback_zone').checked = false;
+                document.getElementById('use_weekly_close_gate').checked = false;
+                document.getElementById('use_auto_pullback').checked = false;
             }
         });
 
@@ -1168,6 +1215,9 @@
         document.getElementById('use_consolidation').checked = false;
         document.getElementById('use_swing_run').checked = false;
         document.getElementById('use_base_pullback').checked = false;
+        document.getElementById('use_pullback_zone').checked = false;
+        document.getElementById('use_weekly_close_gate').checked = false;
+        document.getElementById('use_auto_pullback').checked = false;
 
         // --- Volume Formatter Utility ---
         function formatVolume(vol) {
@@ -1293,14 +1343,20 @@
                 const consolRange = parseFloat(document.getElementById('consolidation_range').value);
                 const swingRun = parseFloat(document.getElementById('swing_run_pct').value);
                 const basePct = parseFloat(document.getElementById('base_pullback_pct').value);
+                const pullbackOffset = parseInt(document.getElementById('pullback_offset').value, 10);
+                const swingGatePct = parseFloat(document.getElementById('swing_gate_pct').value);
+                const weeklyCloseN = parseInt(document.getElementById('weekly_close_n').value, 10);
                 
                 const useEma = document.getElementById('use_ema_filter').checked ? 1 : 0;
                 const useVol = document.getElementById('use_vol_filter').checked ? 1 : 0;
                 const useConsol = document.getElementById('use_consolidation').checked ? 1 : 0;
                 const useSwing = document.getElementById('use_swing_run').checked ? 1 : 0;
                 const useBase = document.getElementById('use_base_pullback').checked ? 1 : 0;
+                const usePullback = document.getElementById('use_pullback_zone').checked ? 1 : 0;
+                const useWeeklyCloseGate = document.getElementById('use_weekly_close_gate').checked ? 1 : 0;
+                const useAutoPullback = document.getElementById('use_auto_pullback').checked ? 1 : 0;
 
-                const response = await fetch(`/api/scan?strategy=${activeStrategy}&universe=${universe}&ema_fast=${emaFastVal}&ema_slow=${emaSlowVal}&min_volume=${minVolVal}&consolidation_days=${consolDays}&consolidation_range=${consolRange}&swing_run_pct=${swingRun}&base_pullback_pct=${basePct}&use_ema_filter=${useEma}&use_vol_filter=${useVol}&use_consolidation=${useConsol}&use_swing_run=${useSwing}&use_base_pullback=${useBase}&scan_combined=${scanCombinedVal}`);
+                const response = await fetch(`/api/scan?strategy=${activeStrategy}&universe=${universe}&ema_fast=${emaFastVal}&ema_slow=${emaSlowVal}&min_volume=${minVolVal}&consolidation_days=${consolDays}&consolidation_range=${consolRange}&swing_run_pct=${swingRun}&base_pullback_pct=${basePct}&use_ema_filter=${useEma}&use_vol_filter=${useVol}&use_consolidation=${useConsol}&use_swing_run=${useSwing}&use_base_pullback=${useBase}&scan_combined=${scanCombinedVal}&pullback_offset=${pullbackOffset}&swing_gate_pct=${swingGatePct}&use_pullback_zone=${usePullback}&weekly_close_n=${weeklyCloseN}&use_weekly_close_gate=${useWeeklyCloseGate}&use_auto_pullback=${useAutoPullback}`);
                 const result = await response.json();
 
                 if (result.status === 'success') {

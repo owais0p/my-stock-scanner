@@ -18,6 +18,9 @@ This document provides a comprehensive breakdown of the engineering decisions, t
     - `strategy`: Supports `current` (MOMENTUM VELOCITY), `vcp` (VCP MATRIX), `momentum_2` (MOMENTUM 2), and `vcp_2` (MOMENTUM VELOCITY 2.0).
     - `universe`: Targets specific market slices from `chunk1` to `chunk5`.
     - `scan_combined`: Switch flag triggering uvicorn scan of the combined market (NSE segment + BSE-exclusive stocks).
+    - `pullback_offset`, `swing_gate_pct`, `use_pullback_zone`: Configure the manual 2nd swing low pullback zone floor check.
+    - `use_auto_pullback`: Toggles programmatic $L_1$ proximity EMA pivot resolving and $L_2$ structural support search.
+    - `weekly_close_n`, `use_weekly_close_gate`: Toggles dynamic weekly resampling and lagging close strength validation.
 - **Performance Optimizations**:
     - **Fast Price Lookup**: Implements `fast_info` metadata retrieval with a strict **0.5s thread-based timeout** to eliminate network-loop lag.
     - **Historical Volume Fallback**: Intelligent lookback logic that scans for the last non-zero trading session's volume, ensuring data consistency during off-market hours.

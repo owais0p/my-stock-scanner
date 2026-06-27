@@ -31,6 +31,16 @@ AAPNATRADER is a high-performance, institutional-grade stock scanning dashboard 
 - **Logic**: For stocks with limited history (`30 <= len(df) < 150`), standard minimum length limits and long-term EMA checks are bypassed to prevent rejection.
 - **VCP/Consolidation**: Consolidation and Volatility Contraction Pattern (VCP) analysis is executed strictly on the available lifecycle data since Listing Day High.
 
+### 2nd Last Pullback Zone & Auto Pullback
+- **Manual 2nd Pullback**: Measures distance from the previous-to-previous swing low $L_2$ (shifted by a user-configured day offset):
+  $$L_2 = \text{Lowest}(Low, 20)[\text{Offset}]$$
+  Condition: $\text{Price} \ge L_2 \times (1 + \text{Swing Gate Value})$.
+- **Auto 2nd Pullback**: Automatically detects $L_1$ closest to the 20 EMA in the last 25 days, scans for the most recent structural pivot low $L_2$ before $L_1$ (minimum in a 5-day window), and checks if the price is within a strict floor range:
+  $$0.98 \times L_2 \le \text{Price} \le 1.15 \times L_2$$
+
+### Chartink Style Weekly Close Gate
+- **Logic**: Validates structural close strength over weeks: $\text{Weekly Close} > \text{Weekly Close}[N]$ (where $N$ is user-configurable "Weeks Number"). It resamples historical daily data to weekly candles and checks the $N$-week lag.
+
 ## 🎨 Design System (Cyber-Terminal)
 - **Theme**: Pure Deep Obsidian (`#060810`) background, Emerald (`#10B981`) accents.
 - **Interactive Signature**: High-intensity neon green (`#00ff9d`) glow on hover for premium elements.
