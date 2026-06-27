@@ -462,7 +462,12 @@ async def run_scan(
                         else:
                             L2 = float(df_prev["Low"].iloc[-30:].min())
                         
-                        if not (L2 * 0.98 <= last_close <= L2 * 1.15):
+                        # --- DYNAMIC SWING GATE BUFFER CALCULATION ---
+                        # If the user specifies a swing_gate_pct value > 0.0 (e.g., 6.0), use it as the upper boundary cushion.
+                        # Otherwise, fall back to the default baseline baseline multiplier of 15% (1.15).
+                        upper_multiplier = 1 + (swing_gate_pct / 100.0) if swing_gate_pct > 0.0 else 1.15
+
+                        if not (L2 * 0.98 <= last_close <= L2 * upper_multiplier):
                             continue
                     else:
                         continue
