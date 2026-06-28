@@ -675,16 +675,38 @@
             </button>
         </div>
 
-        <!-- Universe Selector -->
-        <div class="mb-10 space-y-2">
-            <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest block ml-1">Select Market Universe</label>
-            <select id="universe-selector" class="w-full bg-background border border-border text-slate-300 py-4 px-4 rounded text-[10px] font-bold tracking-widest uppercase focus:outline-none focus:border-accent transition-all cursor-pointer">
-                <option value="chunk1">LARGE TITAN</option>
-                <option value="chunk2">MID STORM</option>
-                <option value="chunk3">SMALL APEX</option>
-                <option value="chunk4">MICRO VORTEX</option>
-                <option value="chunk5">NANO ROCKET</option>
-            </select>
+        <!-- Universe, Sector, and MCAP Selectors -->
+        <div class="mb-10 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="space-y-2">
+                <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest block ml-1">Select Market Universe</label>
+                <select id="universe-selector" class="w-full bg-background border border-border text-slate-300 py-4 px-4 rounded text-[10px] font-bold tracking-widest uppercase focus:outline-none focus:border-accent transition-all cursor-pointer">
+                    <option value="chunk1">LARGE TITAN</option>
+                    <option value="chunk2">MID STORM</option>
+                    <option value="chunk3">SMALL APEX</option>
+                    <option value="chunk4">MICRO VORTEX</option>
+                    <option value="chunk5">NANO ROCKET</option>
+                </select>
+            </div>
+            <div class="space-y-2">
+                <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest block ml-1">SELECT SECTOR</label>
+                <select id="sector-selector" class="w-full bg-background border border-border text-slate-300 py-4 px-4 rounded text-[10px] font-bold tracking-widest uppercase focus:outline-none focus:border-accent transition-all cursor-pointer">
+                    <option value="ALL">ALL</option>
+                    <option value="NIFTY AUTO">NIFTY AUTO</option>
+                    <option value="NIFTY ENERGY">NIFTY ENERGY</option>
+                    <option value="NIFTY IT">NIFTY IT</option>
+                    <option value="NIFTY METAL">NIFTY METAL</option>
+                    <option value="NIFTY PHARMA">NIFTY PHARMA</option>
+                    <option value="NIFTY INFRA">NIFTY INFRA</option>
+                    <option value="NIFTY REALTY">NIFTY REALTY</option>
+                    <option value="NIFTY FMCG">NIFTY FMCG</option>
+                    <option value="NIFTY MEDIA">NIFTY MEDIA</option>
+                    <option value="NIFTY DEFENCE">NIFTY DEFENCE</option>
+                </select>
+            </div>
+            <div class="space-y-2">
+                <label class="text-[8px] font-bold text-slate-500 uppercase tracking-widest block ml-1">MIN MCAP (CR)</label>
+                <input type="number" id="min-mcap" value="100" class="w-full bg-background border border-border text-slate-300 py-4 px-4 rounded text-[10px] font-bold tracking-widest uppercase focus:outline-none focus:border-accent transition-all" min="0" step="any">
+            </div>
         </div>
 
         <!-- Responsive Flex/Grid Split -->
@@ -934,6 +956,14 @@
                         class="relative w-full bg-background border border-border text-slate-300 py-3 px-4 rounded text-[10px] font-bold tracking-widest uppercase focus:outline-none focus:border-accent transition-all placeholder:text-slate-600">
                 </div>
 
+                <!-- Prominent Toggle: Apply Strategy Filters to Sector -->
+                <div class="mb-4">
+                    <label class="flex items-center justify-between p-3.5 border border-border rounded-lg bg-surface/40 hover:bg-surface/70 hover:border-accent/40 shadow-sm cursor-pointer select-none text-[10px] font-bold uppercase tracking-wider text-slate-300 hover:text-accent transition-all hover:drop-shadow-[0_0_8px_rgba(0,255,157,0.15)] theme-transition">
+                        <span>APPLY STRATEGY FILTERS TO SECTOR</span>
+                        <input type="checkbox" id="apply-sector-filters" class="cyber-checkbox !mr-0">
+                    </label>
+                </div>
+
                 <div id="signals-container" class="space-y-1.5 min-h-[300px]">
                     <!-- Low-Profile Idle State -->
                     <div id="empty-state" class="py-20 flex flex-col items-center justify-center gap-4 terminal-border border-dashed rounded-[2rem]">
@@ -1070,6 +1100,9 @@
         const strategyScannerBtn = document.getElementById('strategy-scanner');
         const strategyMomentumOpenBtn = document.getElementById('strategy-momentum-open');
         const universeSelector = document.getElementById('universe-selector');
+        const sectorSelector = document.getElementById('sector-selector');
+        const minMcapInput = document.getElementById('min-mcap');
+        const applySectorFiltersCheckbox = document.getElementById('apply-sector-filters');
         const matrixEngineDisplay = document.getElementById('matrix-engine-display');
         const tickerSearch = document.getElementById('ticker-search');
 
@@ -1313,7 +1346,10 @@
         async function triggerScan() {
             // UI Visual Update for Matrix Engine
             const scanCombinedVal = document.getElementById('scan-combined-toggle').checked ? 1 : 0;
-            if (scanCombinedVal) {
+            const sector = sectorSelector.value;
+            if (sector !== 'ALL') {
+                matrixEngineDisplay.textContent = sector;
+            } else if (scanCombinedVal) {
                 matrixEngineDisplay.textContent = "Combined Market";
             } else {
                 matrixEngineDisplay.textContent = universeSelector.options[universeSelector.selectedIndex].text.split('(')[0].trim();
@@ -1335,6 +1371,9 @@
 
             try {
                 const universe = universeSelector.value;
+                const minMcapVal = parseFloat(minMcapInput.value) || 100.0;
+                const applySectorFiltersVal = applySectorFiltersCheckbox.checked ? 1 : 0;
+                
                 // --- Dynamic UI Parameter Tweaker Hook ---
                 const emaFastVal = parseInt(document.getElementById('ema_fast').value, 10);
                 const emaSlowVal = parseInt(document.getElementById('ema_slow').value, 10);
@@ -1356,7 +1395,7 @@
                 const useWeeklyCloseGate = document.getElementById('use_weekly_close_gate').checked ? 1 : 0;
                 const useAutoPullback = document.getElementById('use_auto_pullback').checked ? 1 : 0;
 
-                const response = await fetch(`/api/scan?strategy=${activeStrategy}&universe=${universe}&ema_fast=${emaFastVal}&ema_slow=${emaSlowVal}&min_volume=${minVolVal}&consolidation_days=${consolDays}&consolidation_range=${consolRange}&swing_run_pct=${swingRun}&base_pullback_pct=${basePct}&use_ema_filter=${useEma}&use_vol_filter=${useVol}&use_consolidation=${useConsol}&use_swing_run=${useSwing}&use_base_pullback=${useBase}&scan_combined=${scanCombinedVal}&pullback_offset=${pullbackOffset}&swing_gate_pct=${swingGatePct}&use_pullback_zone=${usePullback}&weekly_close_n=${weeklyCloseN}&use_weekly_close_gate=${useWeeklyCloseGate}&use_auto_pullback=${useAutoPullback}`);
+                const response = await fetch(`/api/scan?strategy=${activeStrategy}&universe=${universe}&ema_fast=${emaFastVal}&ema_slow=${emaSlowVal}&min_volume=${minVolVal}&consolidation_days=${consolDays}&consolidation_range=${consolRange}&swing_run_pct=${swingRun}&base_pullback_pct=${basePct}&use_ema_filter=${useEma}&use_vol_filter=${useVol}&use_consolidation=${useConsol}&use_swing_run=${useSwing}&use_base_pullback=${useBase}&scan_combined=${scanCombinedVal}&pullback_offset=${pullbackOffset}&swing_gate_pct=${swingGatePct}&use_pullback_zone=${usePullback}&weekly_close_n=${weeklyCloseN}&use_weekly_close_gate=${useWeeklyCloseGate}&use_auto_pullback=${useAutoPullback}&sector=${sector}&min_mcap=${minMcapVal}&apply_sector_filters=${applySectorFiltersVal}`);
                 const result = await response.json();
 
                 if (result.status === 'success') {
@@ -2938,6 +2977,33 @@
         document.getElementById('scan-combined-toggle').addEventListener('change', () => {
             // Just let the user change the toggle option, do not auto-trigger scan
         });
+
+        function updateSectorUI() {
+            const isSectorActive = sectorSelector.value !== 'ALL';
+            if (isSectorActive) {
+                universeSelector.disabled = true;
+                universeSelector.classList.add('opacity-50', 'cursor-not-allowed');
+                
+                applySectorFiltersCheckbox.disabled = false;
+                const label = applySectorFiltersCheckbox.closest('label');
+                if (label) {
+                    label.classList.remove('opacity-40', 'cursor-not-allowed');
+                }
+            } else {
+                universeSelector.disabled = false;
+                universeSelector.classList.remove('opacity-50', 'cursor-not-allowed');
+                
+                applySectorFiltersCheckbox.disabled = true;
+                applySectorFiltersCheckbox.checked = false; // reset state
+                const label = applySectorFiltersCheckbox.closest('label');
+                if (label) {
+                    label.classList.add('opacity-40', 'cursor-not-allowed');
+                }
+            }
+        }
+        
+        sectorSelector.addEventListener('change', updateSectorUI);
+        updateSectorUI();
 
         // Debounced Window Resize event listener to handle viewport changes smoothly
         window.addEventListener('resize', debounce(() => {
