@@ -980,7 +980,8 @@ async def run_scan(
                         # Otherwise, fall back to the default baseline baseline multiplier of 15% (1.15).
                         upper_multiplier = 1 + (swing_gate_pct / 100.0) if swing_gate_pct > 0.0 else 1.15
 
-                        if not (L2 * 0.98 <= last_close <= L2 * upper_multiplier):
+                        # SWING GATE LOGIC: Strict minimum floor pass. Skip anything below or equal to upper_multiplier
+                        if last_close <= (L2 * upper_multiplier):
                             continue
                     else:
                         continue

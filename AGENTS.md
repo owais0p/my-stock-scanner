@@ -35,8 +35,8 @@ AAPNATRADER is a high-performance, institutional-grade stock scanning dashboard 
 - **Manual 2nd Pullback**: Measures distance from the previous-to-previous swing low $L_2$ (shifted by a user-configured day offset):
   $$L_2 = \text{Lowest}(Low, 20)[\text{Offset}]$$
   Condition: $\text{Price} \ge L_2 \times (1 + \text{Swing Gate Value})$.
-- **Auto 2nd Pullback**: Automatically detects $L_1$ closest to the 20 EMA in the last 25 days, scans for the most recent structural pivot low $L_2$ before $L_1$ (minimum in a 5-day window), and checks if the price is within a strict floor range:
-  $$0.98 \times L_2 \le \text{Price} \le 1.15 \times L_2$$
+- **Auto 2nd Pullback**: Automatically detects $L_1$ closest to the 20 EMA in the last 25 days, scans for the most recent structural pivot low $L_2$ before $L_1$ (minimum in a 5-day window), and checks if the price has broken out above the swing gate threshold (where the threshold is the user's Swing Gate Value, defaulting to 15% if 0):
+  $$\text{Price} > L_2 \times \text{upper\_multiplier}$$
 
 ### Chartink Style Weekly Close Gate
 - **Logic**: Validates structural close strength over weeks: $\text{Weekly Close} > \text{Weekly Close}[N]$ (where $N$ is user-configurable "Weeks Number"). It resamples historical daily data to weekly candles and checks the $N$-week lag.
