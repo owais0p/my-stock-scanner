@@ -40,70 +40,37 @@
         }
     </script>
     <style>
-        /* ============================================================
-           AAPNATRADER — BLOOMBERG TERMINAL EDITION
-           Black / Amber-Yellow — Dense Institutional Data Terminal
-        ============================================================ */
-
         :root {
-            /* True terminal black, not navy */
-            --bg-color: #000000;
-            --surface-color: #0A0A0A;
-            --surface-elevated: #121212;
-            --surface-high: #181818;
-
-            /* Bloomberg amber/yellow */
-            --accent-color: #FFC400;
-            --accent-dim: rgba(255, 196, 0, 0.12);
-            --accent-glow: rgba(255, 196, 0, 0.3);
-            --accent-deep: #B38600;
-
-            /* Signal colors — Bloomberg uses amber for up, cyan for down traditionally,
-               but for INR retail clarity we keep green/red with amber as the brand accent */
-            --signal-bull: #10B981;
-            --signal-bear: #FF3B30;
-            --signal-neutral: #6B6B6B;
-
-            /* Hairline borders — sharp, high contrast on black */
-            --border-color: rgba(255, 196, 0, 0.14);
-            --border-mid: rgba(255, 196, 0, 0.28);
-            --border-strong: rgba(255, 196, 0, 0.55);
-
-            /* Typography */
-            --text-primary: #F5F5F0;
-            --text-secondary: #ABABA0;
-            --text-muted: #5C5C54;
-            --text-accent: #FFC400;
-
-            --glass-bg: rgba(10, 10, 10, 0.96);
-            --pod-bg: #0A0A0A;
+            --bg-color: #030712;
+            --surface-color: #111827;
+            --accent-color: #34D399;
+            --border-color: #1E293B;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --glass-bg: #111827;
+            --pod-bg: #111827;
         }
 
         body.light-theme {
-            /* Bloomberg-on-paper alt mode: warm off-white with deep amber/black ink */
-            --bg-color: #F4F1E8;
-            --surface-color: #FFFFFF;
-            --surface-elevated: #FAF8F0;
-            --surface-high: #F0ECDD;
-            --accent-color: #B38600;
-            --accent-dim: rgba(179, 134, 0, 0.1);
-            --accent-glow: rgba(179, 134, 0, 0.25);
-            --accent-deep: #8A6800;
-            --signal-bull: #059669;
-            --signal-bear: #C8102E;
-            --border-color: rgba(20, 18, 10, 0.12);
-            --border-mid: rgba(20, 18, 10, 0.2);
-            --border-strong: rgba(179, 134, 0, 0.45);
-            --text-primary: #18140A;
-            --text-secondary: #4A4334;
-            --text-muted: #8A8270;
-            --text-accent: #8A6800;
-            --glass-bg: rgba(255, 255, 255, 0.97);
-            --pod-bg: #FFFFFF;
+            --bg-color: #f4f6f9;
+            --surface-color: #ffffff;
+            --accent-color: #059669;
+            --border-color: #e2e8f0;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --glass-bg: rgba(255, 255, 255, 0.8);
+            --pod-bg: #ffffff;
         }
 
+        body.dark {
+            --bg-color: #030712;
+            --surface-color: #0b0f19;
+        }
+
+        /* Targeted Hardware-Accelerated Theme Transition */
         .theme-transition {
-            transition: background-color 200ms ease, border-color 200ms ease !important;
+            transition: background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease !important;
+            will-change: background-color, border-color;
         }
 
         body {
@@ -113,444 +80,594 @@
             position: relative;
             min-height: 100vh;
             overflow-x: hidden;
-            font-feature-settings: "tnum" 1, "zero" 1;
         }
 
-        /* ── Terminal scanline + grid texture ── */
-        body::before {
+        body.dark .card-anim {
+            background-color: rgba(11, 15, 25, 0.9) !important;
+            border-color: rgba(30, 41, 59, 0.9) !important;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2) !important;
+        }
+
+        body.dark .card-anim:hover {
+            border-color: rgba(51, 65, 85, 0.8) !important;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35) !important;
+            transform: translateY(-2px);
+        }
+
+        /* Optimized Dual-Layer Background Texture */
+        body::before,
+        body::after {
             content: "";
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             z-index: 0;
             pointer-events: none;
-            background-image:
-                linear-gradient(rgba(255, 196, 0, 0.035) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 196, 0, 0.035) 1px, transparent 1px);
-            background-size: 24px 24px;
+            transition: opacity 500ms cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
+
+        /* Dark Grid */
+        body::before {
+            background-image: linear-gradient(rgba(16, 185, 129, 0.12) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16, 185, 129, 0.12) 1px, transparent 1px);
+            background-size: 16px 16px;
             opacity: 1;
         }
 
-        body.light-theme::before {
-            background-image:
-                linear-gradient(rgba(20, 18, 10, 0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(20, 18, 10, 0.04) 1px, transparent 1px);
+        /* Light Texture */
+        body::after {
+            background-image: radial-gradient(rgba(15, 23, 42, 0.12) 1px, transparent 1px);
+            background-size: 12px 12px;
+            opacity: 0;
         }
 
-        body > * { position: relative; z-index: 1; }
+        body.light-theme::before {
+            opacity: 0;
+        }
 
-        /* ── Typography ── */
-        .text-primary   { color: var(--text-primary) !important; }
-        .text-secondary { color: var(--text-secondary) !important; }
-        .text-accent    { color: var(--accent-color) !important; }
+        body.light-theme::after {
+            opacity: 1;
+        }
 
-        .text-slate-100, .text-slate-300, .text-white { color: var(--text-primary); }
-        .text-slate-500 { color: var(--text-secondary); }
+        /* --- Content Isolation Layer --- */
+        body>* {
+            position: relative;
+            z-index: 1;
+        }
 
+        /* --- Light Theme Force Overrides --- */
         body.light-theme .text-slate-100,
         body.light-theme .text-slate-300,
-        body.light-theme .text-white { color: #18140A !important; }
-
-        .signal-up   { color: var(--signal-bull) !important; font-weight: 700 !important; }
-        .signal-down { color: var(--signal-bear) !important; font-weight: 700 !important; }
-
-        .bg-background { background-color: var(--bg-color); }
-        .bg-surface    { background-color: var(--surface-color); }
-        .border-border { border-color: var(--border-color); }
-
-        .glass { background: var(--glass-bg); backdrop-filter: blur(16px); }
-
-        /* ── Tactical / terminal card ── */
-        .tactical-card {
-            background: var(--pod-bg);
-            border: 1px solid var(--border-color);
-            position: relative;
+        body.light-theme .text-slate-500,
+        body.light-theme .text-white,
+        body.light-theme .brand-text span:first-child {
+            color: #0f172a !important;
         }
 
-        .tactical-card::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 2px;
-            background: repeating-linear-gradient(90deg, var(--accent-color) 0px, var(--accent-color) 6px, transparent 6px, transparent 10px);
-            opacity: 0.7;
+        body.light-theme .card-anim h3,
+        body.light-theme .card-anim span:not(.text-accent):not(.signal-up):not(.signal-down):not(.tooltip-emerald):not(.tooltip-rose):not(.tooltip-blue):not(.tooltip-amber) {
+            color: #0f172a !important;
         }
 
-        /* ── Dense data rows ── */
-        .card-anim {
-            background-color: var(--surface-color) !important;
-            border: 1px solid var(--border-color);
-            cursor: pointer;
-            will-change: transform;
-            transform: translate3d(0, 0, 0);
-            transition: all 0.12s linear !important;
+        body.light-theme .tactical-card {
+            background: #ffffff !important;
+            border: 1px solid rgba(16, 185, 129, 0.1) !important;
+            backdrop-filter: blur(16px) !important;
+            box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.05) !important;
         }
 
-        .card-anim:hover {
-            border-color: var(--border-strong) !important;
-            background-color: var(--surface-elevated) !important;
-            box-shadow: inset 2px 0 0 var(--accent-color) !important;
+        body.light-theme .card-anim {
+            background-color: #ffffff !important;
+            border: 1px solid rgba(226, 232, 240, 0.6) !important;
+            border-left: 4px solid #059669 !important;
+            box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.05) !important;
         }
 
-        .card-anim:active { background-color: var(--surface-high) !important; }
-
-        body.dark .card-anim {
-            background-color: var(--surface-color) !important;
-            border-color: var(--border-color) !important;
+        body.light-theme #scan-btn,
+        body.light-theme #export-btn {
+            box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3) !important;
         }
 
-        /* ── Select / dropdown — terminal style ── */
-        select {
-            cursor: pointer;
-            border: 1px solid var(--border-mid);
-            background-color: var(--surface-elevated);
-            color: var(--text-primary);
-            border-radius: 2px;
-        }
-
-        select:hover, select:focus {
-            border-color: var(--accent-color) !important;
-            outline: none;
-            box-shadow: 0 0 0 1px var(--accent-dim);
+        body.light-theme .score-badge {
+            background: rgba(5, 150, 105, 0.08) !important;
+            border: 1px solid rgba(5, 150, 105, 0.2) !important;
+            color: #059669 !important;
         }
 
         body.light-theme select {
-            color: #18140A !important;
-            border-color: var(--border-mid) !important;
-            background-color: #FFFFFF !important;
+            color: #1e293b !important;
+            border-color: #e2e8f0 !important;
+            background-color: #ffffff !important;
         }
-        body.light-theme select option { color: #18140A !important; }
 
-        /* ── Primary action — Bloomberg function-key button ── */
-        #scan-btn, #export-btn {
+        body.light-theme select option {
+            color: #1e293b !important;
+        }
+
+        body.light-theme #matrix-engine-display {
+            color: #1e293b !important;
+        }
+
+        body.light-theme #scan-status:not(.signal-up):not(.signal-down) {
+            color: #64748b !important;
+        }
+
+        body.light-theme #strategy-scanner,
+        body.light-theme #strategy-momentum-open {
+            background-color: #ffffff !important;
+            border-color: #e2e8f0 !important;
+        }
+
+        /* High-Contrast Signal Overrides (Theme Agnostic) */
+        .signal-up {
+            color: #34D399 !important;
+            font-weight: 800 !important;
+        }
+
+        .signal-down {
+            color: #f87171 !important;
+            font-weight: 800 !important;
+        }
+
+        body.light-theme .signal-up {
+            color: #059669 !important;
+        }
+
+        body.light-theme .signal-down {
+            color: #dc2626 !important;
+        }
+
+        /* ---------------------------------- */
+
+        /* Solid UI Overrides */
+        #strategy-scanner,
+        #strategy-momentum-open {
+            background-color: var(--surface-color);
+        }
+
+        #strategy-scanner.border-accent {
+            background-color: #152721;
+            /* Solid Dark Emerald Tint */
+        }
+
+        body.light-theme #strategy-scanner.border-accent {
+            background-color: #ecfdf5 !important;
+            /* Solid Light Emerald Tint */
+        }
+
+        #universe-selector {
+            background-color: var(--bg-color) !important;
+        }
+
+        /* --- Section Header Masking --- */
+        .section-header-mask {
+            background: #030712;
+            box-shadow: 0 0 10px 10px #030712;
+            border-radius: 4px;
+            padding: 6px 12px;
+            z-index: 10;
             position: relative;
-            overflow: hidden;
-            transition: all 0.1s linear !important;
-            letter-spacing: 0.18em;
+            margin-left: -12px;
+            /* Offset padding for alignment */
         }
 
-        #scan-btn {
-            background: var(--accent-color);
-            color: #000000;
-            border: 1px solid var(--accent-color);
-            box-shadow: 0 0 0 1px rgba(255,196,0,0.2), 0 4px 16px var(--accent-glow);
-            font-weight: 800;
-            border-radius: 2px;
+        body.light-theme .section-header-mask {
+            background: #f8fafc !important;
+            box-shadow: 0 0 10px 10px #f8fafc !important;
         }
 
-        #scan-btn:hover {
-            background: #FFD43B;
-            box-shadow: 0 0 0 1px rgba(255,196,0,0.35), 0 4px 24px var(--accent-glow);
+        .section-header-mask h2,
+        .section-header-mask div {
+            font-weight: 700 !important;
+            text-rendering: optimizeLegibility;
         }
 
-        #scan-btn:active {
-            background: var(--accent-deep) !important;
-            transform: scale(0.99) !important;
-        }
+        /* ------------------------------ */
 
-        body.light-theme #scan-btn { color: #FFFFFF; }
-
-        /* ── Strategy switcher — Bloomberg function tabs ── */
-        #strategy-scanner, #strategy-momentum-open {
-            border: 1px solid var(--border-mid);
-            background: var(--surface-color);
-            border-radius: 2px !important;
-            font-size: 10px !important;
-            letter-spacing: 0.16em !important;
-            flex: 1 1 0% !important;
-            padding-top: 0.55rem !important;
-            padding-bottom: 0.55rem !important;
-            transition: all 0.12s linear !important;
-            color: var(--text-muted);
-        }
-
-        #strategy-scanner:hover, #strategy-momentum-open:hover {
-            border-color: var(--border-strong);
-            color: var(--accent-color);
-            background: var(--accent-dim);
-        }
-
-        /* ── Brand text ── */
-        .brand-text {
-            font-family: "Iceland", sans-serif;
-            font-weight: 400;
-            font-style: italic;
-            letter-spacing: 5px;
-            text-transform: uppercase;
-        }
-
-        @keyframes brand-pulse {
-            from { text-shadow: 0 0 6px rgba(255, 196, 0, 0.3); }
-            to   { text-shadow: 0 0 20px rgba(255, 196, 0, 0.85), 0 0 40px rgba(255, 196, 0, 0.3); }
-        }
-        .brand-glow { animation: brand-pulse 2.4s ease-in-out infinite alternate; }
-
-        @keyframes pulse-accent {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50%       { opacity: 0.4; transform: scale(1.2); }
-        }
-        .pulse-emerald { animation: pulse-accent 1.6s infinite; }
-
-        /* ── Ticker tape marquee ── */
-        @keyframes ticker-scroll {
-            from { transform: translateX(0); }
-            to   { transform: translateX(-50%); }
-        }
-        .ticker-track {
-            animation: ticker-scroll 38s linear infinite;
-            white-space: nowrap;
-            display: inline-flex;
-        }
-        .ticker-tape-wrap:hover .ticker-track { animation-play-state: paused; }
-
-        /* ── Cyber checkbox ── */
+        /* --- Cyber Checkbox Styling --- */
         .cyber-checkbox {
             appearance: none;
-            width: 13px; height: 13px;
-            border: 1px solid var(--border-mid);
-            border-radius: 1px;
-            background: rgba(0,0,0,0.4);
+            width: 14px;
+            height: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 3px;
+            background: rgba(0, 0, 0, 0.2);
             cursor: pointer;
             position: relative;
-            transition: all 0.12s linear;
+            transition: all 0.2s ease;
             margin-right: 4px;
             vertical-align: middle;
-            flex-shrink: 0;
         }
 
         .cyber-checkbox:checked {
             background: var(--accent-color);
             border-color: var(--accent-color);
-            box-shadow: 0 0 6px var(--accent-color);
+            box-shadow: 0 0 8px var(--accent-color);
         }
 
         .cyber-checkbox:checked::after {
             content: "✓";
             position: absolute;
-            top: 50%; left: 50%;
+            top: 50%;
+            left: 50%;
             transform: translate(-50%, -50%);
-            color: #000000;
-            font-size: 9px;
+            color: var(--bg-color);
+            font-size: 10px;
             font-weight: 900;
         }
 
-        /* ── Theme toggle ── */
+        /* ------------------------------ */
+
+        .text-slate-300 {
+            color: var(--text-primary);
+        }
+
+        .text-slate-100 {
+            color: var(--text-primary);
+        }
+
+        .text-slate-500 {
+            color: var(--text-secondary);
+        }
+
+        .text-white {
+            color: var(--text-primary);
+        }
+
+        .bg-background {
+            background-color: var(--bg-color);
+        }
+
+        .bg-surface {
+            background-color: var(--surface-color);
+        }
+
+        .border-border {
+            border-color: var(--border-color);
+        }
+
+        .terminal-border {
+            border: 1px solid var(--border-color);
+        }
+
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+        }
+
+        .tactical-card {
+            background: var(--pod-bg);
+            backdrop-filter: blur(12px);
+        }
+
+        /* --- Global Interaction Transition --- */
+        button,
+        .card-anim,
+        select,
+        .switch .slider {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        /* --- Main Action Buttons (Scan/Export) --- */
+        #scan-btn,
+        #export-btn {
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        #scan-btn:hover,
+        #export-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(5, 150, 105, 0.25);
+            letter-spacing: 4px;
+        }
+
+        body.light-theme #scan-btn:hover {
+            background-color: #059669 !important;
+            /* emerald-600 */
+        }
+
+        #scan-btn:active,
+        #export-btn:active {
+            transform: translateY(0px) scale(0.98);
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+        }
+
+        /* --- Strategy Tabs --- */
+        #strategy-scanner,
+        #strategy-momentum-open {
+            border: 1px solid var(--border-color);
+        }
+
+        #strategy-scanner:hover,
+        #strategy-momentum-open:hover {
+            border-color: var(--accent-color);
+            background-color: rgba(52, 211, 153, 0.05);
+        }
+
+        body.light-theme #strategy-scanner:hover,
+        body.light-theme #strategy-momentum-open:hover {
+            background-color: #f8fafc;
+            /* slate-50 */
+            color: #0f172a;
+            /* slate-900 */
+            border-color: rgba(226, 232, 240, 0.8);
+            /* slate-200/80 */
+        }
+
+        /* --- Live Signals Cards (GPU Accelerated) --- */
+        #signals-container {
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
+        }
+
+        .card-anim {
+            background-color: var(--surface-color) !important;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
+        }
+
+        .card-anim:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-color);
+            box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease !important;
+        }
+
+        body.light-theme .card-anim:hover {
+            border-color: rgba(203, 213, 225, 0.9) !important;
+            /* slate-300/90 */
+        }
+
+        .card-anim:active {
+            transform: translateY(-1px) scale(0.99);
+            opacity: 0.9;
+        }
+
+        /* --- Dropdowns & Selection Inputs --- */
+        select {
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+        }
+
+        select:hover,
+        select:focus {
+            border-color: var(--accent-color) !important;
+            outline: none;
+            box-shadow: 0 0 0 1px var(--accent-color);
+        }
+
+        @keyframes pulse-emerald {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.6;
+                transform: scale(1.1);
+            }
+        }
+
+        .pulse-emerald {
+            animation: pulse-emerald 2s infinite;
+        }
+
+        @keyframes neon-breathe {
+            from {
+                text-shadow: 0 0 10px rgba(52, 211, 153, 0.4), 0 0 20px rgba(52, 211, 153, 0.2);
+            }
+
+            to {
+                text-shadow: 0 0 25px rgba(52, 211, 153, 0.9), 0 0 45px rgba(52, 211, 153, 0.5);
+            }
+        }
+
+        .brand-glow {
+            animation: neon-breathe 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes border-pulse {
+
+            0%,
+            100% {
+                border-color: rgba(52, 211, 153, 0.1);
+                box-shadow: 0 0 15px rgba(52, 211, 153, 0.05);
+            }
+
+            50% {
+                border-color: rgba(52, 211, 153, 0.3);
+                box-shadow: 0 0 30px rgba(52, 211, 153, 0.1);
+            }
+        }
+
+        .tactical-card {
+            border-width: 0.5px;
+            animation: border-pulse 5s infinite ease-in-out;
+        }
+
+        .brand-text {
+            font-family: "Iceland", sans-serif;
+            font-weight: 400;
+            font-style: italic;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .theme-toggle {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* Custom Theme Switch - High-Tech Refactor */
         .switch {
             position: relative;
             display: flex;
             align-items: center;
-            width: 48px; height: 24px;
+            width: 48px;
+            height: 24px;
         }
 
-        .switch input { opacity: 0; width: 0; height: 0; }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
 
         .slider {
             position: absolute;
             cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #0A0A0A;
-            border: 1px solid rgba(255, 196, 0, 0.4);
-            border-radius: 2px;
-            box-shadow: inset 0 1px 4px rgba(0,0,0,0.8);
-            transition: all 0.25s linear;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #0b0f19;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 12px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.8);
         }
 
         .slider:before {
-            content: "";
             position: absolute;
-            height: 16px; width: 16px;
-            left: 3px; bottom: 3px;
-            background: var(--accent-color);
-            border-radius: 1px;
-            box-shadow: 0 0 8px var(--accent-color);
-            transition: all 0.25s linear;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 2px;
+            background-color: #10b981;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 50%;
+            box-shadow: 0 0 10px #10b981;
         }
 
-        input:checked + .slider {
-            background-color: #FAF8F0;
-            border-color: rgba(179, 134, 0, 0.5);
+        input:checked+.slider {
+            background-color: #f1f5f9;
+            border-color: #cbd5e1;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.08);
         }
 
-        input:checked + .slider:before {
-            transform: translateX(23px);
-            background: #8A6800;
-            box-shadow: 0 0 8px rgba(138, 104, 0, 0.6);
+        input:checked+.slider:before {
+            transform: translateX(24px);
+            background-color: #059669;
+            box-shadow: 0 0 10px rgba(5, 150, 105, 0.6);
         }
 
-        /* ── Section header mask ── */
-        .section-header-mask {
-            background: var(--bg-color);
-            box-shadow: 0 0 12px 12px var(--bg-color);
-            border-radius: 2px;
-            padding: 5px 10px;
-            z-index: 10;
-            position: relative;
-            margin-left: -10px;
-        }
-
-        body.light-theme .section-header-mask {
-            background: #F4F1E8 !important;
-            box-shadow: 0 0 12px 12px #F4F1E8 !important;
-        }
-
-        .section-header-mask h2, .section-header-mask div { font-weight: 700 !important; }
-
-        /* ── ApexCharts tooltip override ── */
+        /* Custom Tooltip Wrapper Styling (Removes default library containers to prevent styling leak) */
         .apexcharts-tooltip {
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
         }
 
-        .tooltip-emerald { color: #0A7D3C !important; }
-        .dark .tooltip-emerald { color: #00E676 !important; }
-        .tooltip-rose { color: #C8102E !important; }
-        .dark .tooltip-rose { color: #FF3B30 !important; }
-        .tooltip-blue { color: #B38600 !important; }
-        .dark .tooltip-blue { color: #FFC400 !important; }
-        .tooltip-amber { color: #8A6800 !important; }
-        .dark .tooltip-amber { color: #FFD43B !important; }
+        /* Tooltip Label Colors (Uses !important to bypass wildcard color overrides in Light Theme) */
+        .tooltip-emerald {
+            color: #059669 !important;
+        }
 
+        .dark .tooltip-emerald {
+            color: #10B981 !important;
+        }
+
+        .tooltip-rose {
+            color: #dc2626 !important;
+        }
+
+        .dark .tooltip-rose {
+            color: #f87171 !important;
+        }
+
+        .tooltip-blue {
+            color: #2563eb !important;
+        }
+
+        .dark .tooltip-blue {
+            color: #3b82f6 !important;
+        }
+
+        .tooltip-amber {
+            color: #d97706 !important;
+        }
+
+        .dark .tooltip-amber {
+            color: #f59e0b !important;
+        }
+
+        /* Custom Y-Axis Tooltip Styling for Contrast (Global) */
         .apexcharts-yaxistooltip {
-            background: #000000 !important;
-            border: 1px solid #FFC400 !important;
-            color: #FFC400 !important;
+            background: #090d16 !important;
+            border: 1.5px solid #3b82f6 !important;
+            /* Premium dark blue border for distinction */
+            color: #3b82f6 !important;
+            /* Blue text */
             font-family: 'JetBrains Mono', monospace !important;
             font-size: 9px !important;
             font-weight: bold !important;
-            border-radius: 2px !important;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.8) !important;
+            border-radius: 4px !important;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7) !important;
         }
 
         body.light-theme .apexcharts-yaxistooltip {
             background: #ffffff !important;
-            border: 1px solid #B38600 !important;
-            color: #B38600 !important;
+            border: 1.5px solid #2563eb !important;
+            color: #2563eb !important;
         }
 
-        .apexcharts-yaxistooltip-right::before,
+        /* Arrow border styling to match */
+        .apexcharts-yaxistooltip-right::before {
+            border-left-color: #3b82f6 !important;
+            border-right-color: #3b82f6 !important;
+        }
+
         .apexcharts-yaxistooltip-right::after {
-            border-left-color: #FFC400 !important;
-            border-right-color: #FFC400 !important;
+            border-left-color: #090d16 !important;
+            border-right-color: #090d16 !important;
         }
 
-        .apexcharts-yaxistooltip-right::after {
-            border-left-color: #000000 !important;
-            border-right-color: #000000 !important;
+        body.light-theme .apexcharts-yaxistooltip-right::before {
+            border-left-color: #2563eb !important;
+            border-right-color: #2563eb !important;
         }
 
-        body.light-theme .apexcharts-yaxistooltip-right::before { border-left-color: #B38600 !important; }
-        body.light-theme .apexcharts-yaxistooltip-right::after  { border-left-color: #ffffff !important; }
+        body.light-theme .apexcharts-yaxistooltip-right::after {
+            border-left-color: #ffffff !important;
+            border-right-color: #ffffff !important;
+        }
 
+        /* High-fidelity Y-axis dragging cursor selector */
         .apexcharts-yaxis,
         .apexcharts-yaxis-texts-g text,
-        .apexcharts-yaxis-label { cursor: ns-resize !important; pointer-events: all !important; }
+        .apexcharts-yaxis-label {
+            cursor: ns-resize !important;
+            pointer-events: all !important;
+        }
 
+        /* Suppress crosshair and tooltips during Y-axis drag to clear GPU rendering threads */
         .dragging-y .apexcharts-tooltip,
         .dragging-y .apexcharts-x-crosshairs,
         .dragging-y .apexcharts-y-crosshairs,
         .dragging-y .apexcharts-yaxistooltip,
         .dragging-y .apexcharts-xcrosshairs,
         .dragging-y .apexcharts-ycrosshairs {
-            display: none !important; opacity: 0 !important;
-            visibility: hidden !important; pointer-events: none !important;
+            display: none !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
         }
 
-        /* ── Score badge ── */
-        .score-badge {
-            background: var(--accent-dim);
-            border: 1px solid rgba(255, 196, 0, 0.35);
-            color: var(--accent-color);
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 800;
-            border-radius: 2px;
-        }
-
-        body.light-theme .score-badge {
-            background: rgba(179, 134, 0, 0.08) !important;
-            border-color: rgba(179, 134, 0, 0.3) !important;
-            color: #8A6800 !important;
-        }
-
-
-
-        #signals-container { will-change: transform; transform: translate3d(0, 0, 0); }
-
-        /* ── Light theme card overrides ── */
-        body.light-theme .card-anim {
-            background-color: #FFFFFF !important;
-            border: 1px solid rgba(20, 18, 10, 0.1) !important;
-            border-left: 3px solid #B38600 !important;
-        }
-        body.light-theme .card-anim:hover {
-            border-color: rgba(179, 134, 0, 0.4) !important;
-            box-shadow: inset 2px 0 0 #B38600 !important;
-        }
-
-        body.light-theme .tactical-card {
-            background: #FFFFFF !important;
-            border-color: rgba(20, 18, 10, 0.12) !important;
-        }
-
-        body.light-theme #strategy-scanner,
-        body.light-theme #strategy-momentum-open {
-            background-color: #FFFFFF !important;
-            border-color: rgba(20, 18, 10, 0.15) !important;
-            color: #4A4334 !important;
-        }
-
-        body.light-theme #matrix-engine-display { color: #18140A !important; }
-        body.light-theme #scan-status:not(.signal-up):not(.signal-down) { color: #8A8270 !important; }
-
-        body.light-theme .card-anim h3,
-        body.light-theme .card-anim span:not(.text-accent):not(.signal-up):not(.signal-down):not(.tooltip-emerald):not(.tooltip-rose):not(.tooltip-blue):not(.tooltip-amber) {
-            color: #18140A !important;
-        }
-
-        body.light-theme #export-btn { box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06) !important; }
-
-        /* ── Custom scrollbar ── */
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 2px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 2px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--accent-color); }
-
-        /* ── Header ── */
-        header {
-            background: rgba(0, 0, 0, 0.98) !important;
-            border-bottom: 1px solid var(--border-color) !important;
-            backdrop-filter: blur(16px);
-        }
-
-        body.light-theme header {
-            background: rgba(255, 255, 255, 0.98) !important;
-            border-bottom-color: var(--border-color) !important;
-        }
-
-        header::before {
-            content: "";
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 2px;
-            background: repeating-linear-gradient(90deg, var(--accent-color) 0px, var(--accent-color) 8px, transparent 8px, transparent 14px);
-            opacity: 0.8;
-        }
-
-        /* ── Mono data labels (Bloomberg uses tabular figures everywhere) ── */
-        .font-mono { font-variant-numeric: tabular-nums; }
-
-        /* ── Blinking live cursor ── */
-        @keyframes blink-cursor {
-            0%, 49% { opacity: 1; }
-            50%, 100% { opacity: 0; }
-        }
-        .live-cursor::after {
-            content: "_";
-            animation: blink-cursor 1s steps(1) infinite;
-            color: var(--accent-color);
-        }
-
-        /* ── Mobile adjustments ── */
+        /* --- Mobile Responsive Logic (< 768px) --- */
         @media (max-width: 767px) {
             header .max-w-full {
                 flex-direction: row;
@@ -562,15 +679,101 @@
                 gap: 8px;
             }
 
-            header { height: auto; min-height: 4rem; }
-            .brand-text { font-size: 1.2rem; }
-            .flex.items-center.gap-\[16px\] { gap: 8px; }
-            .switch { width: 40px; height: 20px; }
-            .slider:before { height: 14px; width: 14px; left: 3px; bottom: 2px; }
-            input:checked + .slider:before { transform: translateX(20px); }
-            .max-w-full.mx-auto.px-3.pt-24 { padding-top: 7.5rem !important; }
+            header {
+                height: auto;
+                min-height: 4rem;
+            }
 
-            #strategy-scanner, #strategy-momentum-open {
+            .brand-text {
+                font-size: 1.25rem;
+            }
+
+            .flex.items-center.gap-\[16px\] {
+                gap: 8px;
+            }
+
+            .switch {
+                width: 40px;
+                height: 20px;
+            }
+
+            .slider:before {
+                height: 14px;
+                width: 14px;
+                left: 3px;
+                bottom: 2px;
+            }
+
+            input:checked+.slider:before {
+                transform: translateX(20px);
+            }
+
+            .max-w-full.mx-auto.px-2.pt-20 {
+                padding-top: 6.5rem !important;
+            }
+
+            /* Hero Scaling */
+            .mb-3.p-8.rounded-3xl,
+            .mb-12.p-8.rounded-3xl {
+                padding: 1.5rem;
+                margin-bottom: 1.5rem;
+            }
+
+            h1.brand-text {
+                font-size: 1.8rem !important;
+                letter-spacing: 2px !important;
+            }
+
+            /* Action Tabs Flex */
+            .mb-6.grid.grid-cols-2 {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            #strategy-scanner,
+            #strategy-momentum-open {
+                padding-top: 1rem;
+                padding-bottom: 1rem;
+                font-size: 8px;
+                letter-spacing: 0.1em;
+            }
+        }
+
+        /* Custom Scrollbar for Modals */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        /* High-Density Terminal Overrides */
+        #strategy-scanner,
+        #strategy-momentum-open {
+            padding-top: 0.5rem !important;
+            padding-bottom: 0.5rem !important;
+            border-radius: 4px !important;
+            font-size: 10px !important;
+            letter-spacing: 0.15em !important;
+            flex: 1 1 0% !important;
+        }
+
+        @media (max-width: 767px) {
+
+            #strategy-scanner,
+            #strategy-momentum-open {
                 padding-top: 0.4rem !important;
                 padding-bottom: 0.4rem !important;
                 font-size: 8px !important;
@@ -584,40 +787,37 @@
     <!-- Header -->
     <header
         class="fixed top-0 left-0 right-0 h-16 bg-background border-b border-border z-50 flex items-center theme-transition">
-        <div class="max-w-full mx-auto w-full flex items-center justify-between px-3 md:px-6">
+        <div class="max-w-full mx-auto w-full flex items-center justify-between px-2 md:px-4">
             <div class="flex items-center gap-3">
-                <div class="h-7 w-7 text-slate-100 flex items-center justify-center">
+                <div class="h-8 w-8 text-slate-100 flex items-center justify-center">
                     <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-full w-full">
                         <path d="M50 20L20 80H32L50 44L68 80H80L50 20Z" fill="currentColor" />
-                        <path d="M42 60H58L65 75H35L42 60Z" fill="#FFC400" />
-                        <path d="M75 25L85 15M85 15H77M85 15V23" stroke="#FFC400" stroke-width="5"
+                        <path d="M42 60H58L65 75H35L42 60Z" fill="#10B981" />
+                        <path d="M75 25L85 15M85 15H77M85 15V23" stroke="#10B981" stroke-width="5"
                             stroke-linecap="round" stroke-linejoin="round" />
                     </svg>
                 </div>
-                <div class="flex flex-col leading-none">
-                    <span class="text-xl brand-text leading-none">
-                        <span class="text-slate-100">AAPNA</span><span class="text-accent brand-glow">TRADER</span>
-                    </span>
-                    <span class="hidden sm:block text-[8px] font-bold text-slate-500 uppercase tracking-[3px] mt-1">Institutional Scanning Desk</span>
-                </div>
+                <span class="text-2xl brand-text">
+                    <span class="text-slate-100">AAPNA</span><span class="text-emerald-400 brand-glow">TRADER</span>
+                </span>
             </div>
-            <div class="flex items-center gap-2 md:gap-3">
+            <div class="flex items-center gap-2 md:gap-[16px]">
                 <!-- Follow Us Hub -->
                 <div
-                    class="hidden lg:flex items-center gap-2 md:gap-3 px-2 md:px-3 py-1 md:py-1.5 border border-border rounded bg-surface shadow-sm">
+                    class="flex items-center gap-2 md:gap-3 px-2 md:px-3 py-1 md:py-1.5 border border-slate-200/80 dark:border-slate-800/80 rounded-full bg-white dark:bg-[#060810] shadow-sm dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)]">
                     <span
-                        class="hidden sm:block text-[8px] font-bold text-slate-500 uppercase tracking-[2px]">Follow
+                        class="hidden sm:block text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[2px]">Follow
                         Us</span>
                     <div class="flex gap-2 md:gap-2.5">
                         <a href="https://t.me/Aapnatrader" target="_blank"
-                            class="text-slate-500 hover:text-accent transition-all duration-300">
+                            class="text-slate-500 dark:text-slate-400 hover:text-[#00cc7d] dark:hover:text-[#00ff9d] transition-all duration-300 hover:drop-shadow-[0_0_12px_rgba(0,255,157,1)] dark:hover:drop-shadow-[0_0_12px_rgba(0,255,157:0.8)]">
                             <svg class="w-3.5 h-3.5 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 24 24">
                                 <path
                                     d="M20.665 3.717l-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42l10.532-6.645c.498-.303.953-.14.579.192l-8.533 7.701h-.002l.002.001l-.314 4.692c.46 0 .663-.211.921-.46l2.211-2.15l4.599 3.397c.848.467 1.457.227 1.668-.785l3.019-14.228c.309-1.239-.473-1.8-1.282-1.434z" />
                             </svg>
                         </a>
                         <a href="https://www.instagram.com/aapnatrader2" target="_blank"
-                            class="text-slate-500 hover:text-accent transition-all duration-300">
+                            class="text-slate-500 dark:text-slate-400 hover:text-[#00cc7d] dark:hover:text-[#00ff9d] transition-all duration-300 hover:drop-shadow-[0_0_12px_rgba(0,255,157,1)] dark:hover:drop-shadow-[0_0_12px_rgba(0,255,157:0.8)]">
                             <svg class="w-3.5 h-3.5 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 24 24">
                                 <path
                                     d="M12 2.163c3.204 0 3.584.012 4.85.07 1.17.054 1.805.249 2.227.412.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.054 1.17-.249 1.805-.413 2.227-.217.562-.477.96-.896 1.382-.42.419-.819.679-1.381.896-.422.164-1.057.36-2.227.413-1.266.057-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.17-.054-1.805-.249-2.227-.412-.562-.217-.96-.477-1.382-.896-.419-.42-.679-.819-.896-1.381-.164-.422-.36-1.057-.413-2.227-.057-1.266-.07-1.646-.07-4.85s.012-3.584.07-4.85c.054-1.17.249-1.805.412-2.227.217-.562.477-.96.896-1.382.42-.419.819-.679 1.381-.896.422-.164 1.057-.36 2.227-.413 1.266-.057 1.646-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-1.28.058-2.15.26-2.914.557-.79.307-1.46.719-2.128 1.388-.67.669-1.082 1.339-1.389 2.128-.297.764-.5 1.634-.558 2.914-.058 1.28-.072 1.688-.072 4.947s.014 3.667.072 4.947c.058 1.28.26 2.15.558 2.914.307.79.719 1.46 1.388 2.128.669.67 1.339 1.082 2.128 1.389.764.297 1.634.5 2.914.558 1.28.058 1.688.072 4.947.072s3.667-.014 4.947-.072c1.28-.058 2.15-.26 2.914-.558.79-.307 1.46-.719 2.128-1.388.67-.669 1.082-1.339 1.389-2.128.297-.764.5-1.634.558-2.914.058-1.28.072-1.688.072-4.947s-.014-3.667-.072-4.947c-.058-1.28-.26-2.15-.558-2.914-.307-.79-.719-1.46-1.388-2.128-.669-.67-1.339-1.082-2.128-1.389-.764-.297-1.634-.5-2.914-.558-1.28-.058-1.688-.072-4.947-.072zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.791-4-4s1.791-4 4-4 4 1.791 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
@@ -628,10 +828,10 @@
 
                 <!-- Scan Combined Market Toggle -->
                 <label
-                    class="hidden md:flex items-center gap-1.5 px-3 py-1.5 border border-border rounded bg-surface shadow-sm cursor-pointer select-none text-[9px] font-bold uppercase tracking-wider text-slate-500 hover:text-accent hover:border-accent/40 transition-all shrink-0">
+                    class="flex items-center gap-1.5 px-3 py-1.5 border border-slate-200/80 dark:border-slate-800/80 rounded-full bg-white dark:bg-[#060810] shadow-sm cursor-pointer select-none text-[8px] md:text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-accent hover:border-accent/40 transition-all shrink-0 hover:drop-shadow-[0_0_8px_rgba(0,255,157,0.2)]">
                     <input type="checkbox" id="scan-combined-toggle" class="cyber-checkbox">
-                    <span class="hidden lg:inline">Combined Market (NSE+BSE)</span>
-                    <span class="lg:hidden">Combined</span>
+                    <span class="hidden md:inline">Scan Combined Market (NSE + BSE Exclusives)</span>
+                    <span class="md:hidden">Scan Combined</span>
                 </label>
 
                 <label class="switch shrink-0">
@@ -639,84 +839,58 @@
                     <span class="slider"></span>
                 </label>
                 <div
-                    class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded text-[10px] font-mono tracking-widest uppercase font-bold border transition-all duration-300 bg-surface text-slate-300 border-border shadow-sm cursor-default shrink-0">
-                    <span class="relative flex h-1.5 w-1.5">
+                    class="hidden sm:flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-mono tracking-widest uppercase font-bold border transition-all duration-300 bg-slate-100/80 text-slate-700 border-slate-200/80 shadow-sm hover:bg-slate-200/50 dark:bg-[#0d131f]/90 dark:text-slate-300 dark:border-slate-800/80 dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)] dark:hover:border-emerald-500/40 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.1)] dark:hover:text-emerald-400 cursor-default shrink-0">
+                    <span class="relative flex h-2 w-2">
                         <span
-                            class="absolute inline-flex h-full w-full rounded-full bg-accent opacity-75 animate-ping"></span>
-                        <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-accent"></span>
+                            class="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
-                    <span class="hidden md:inline">Live Feed</span>
-                    <span class="md:hidden">Live</span>
+                    <span class="hidden md:inline">Sentinel Monitor</span>
+                    <span class="md:hidden">Sentinel</span>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Bloomberg-style ticker tape strip -->
-    <div class="fixed top-16 left-0 right-0 z-40 h-7 ticker-tape-wrap overflow-hidden border-b border-border bg-background flex items-center theme-transition">
-        <div id="dynamic-ticker-track" class="ticker-track text-[10px] font-bold tracking-wider font-mono">
-            <span class="inline-flex items-center gap-6 px-4">
-                <span class="text-slate-500">MARKET DATA TRACKER</span> <span class="text-slate-400 animate-pulse">[ STREAMING MATRIX ACTIVE ]</span>
-            </span>
-        </div>
-    </div>
-
     <!-- Main structural layout container -->
-    <div class="max-w-full mx-auto px-3 md:px-6 pt-24 pb-32 md:pt-28 md:pb-24">
-
-        <!-- Bloomberg Console Strip -->
-        <div class="mb-5 max-w-5xl mx-auto">
-            <div class="flex flex-col md:flex-row items-stretch gap-0 rounded-sm tactical-card overflow-hidden">
-                <div class="flex items-center gap-3 p-4 md:border-r md:border-border shrink-0 bg-surface">
-                    <div class="h-9 w-9 text-slate-100 shrink-0">
-                        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-full w-full">
-                            <path d="M50 20L20 80H32L50 44L68 80H80L50 20Z" fill="currentColor" />
-                            <path d="M42 60H58L65 75H35L42 60Z" fill="#FFC400" />
-                            <path d="M75 25L85 15M85 15H77M85 15V23" stroke="#FFC400" stroke-width="5"
-                                stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                    </div>
-                    <div class="text-left">
-                        <h1 class="text-base brand-text leading-none">
-                            <span class="text-slate-100">AAPNA</span><span class="text-accent brand-glow">TRADER</span>
-                        </h1>
-                        <p class="text-[8px] font-bold text-slate-500 uppercase tracking-[2px] leading-none mt-1">
-                            Momentum Logic Engine
-                        </p>
-                    </div>
-                </div>
-                <div class="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-px bg-border">
-                    <div class="text-left p-3 bg-background">
-                        <div class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Universe</div>
-                        <div class="text-xs font-bold text-slate-100 font-mono">NSE + BSE</div>
-                    </div>
-                    <div class="text-left p-3 bg-background">
-                        <div class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Engine Mode</div>
-                        <div class="text-xs font-bold text-accent font-mono live-cursor">REAL-TIME</div>
-                    </div>
-                    <div class="text-left p-3 bg-background">
-                        <div class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Indicators</div>
-                        <div class="text-xs font-bold text-slate-100 font-mono">EMA · VOL · SWING</div>
-                    </div>
-                    <div class="text-left p-3 bg-background">
-                        <div class="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Session</div>
-                        <div class="text-xs font-bold text-slate-100 font-mono" id="terminal-clock">--:--:--</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="max-w-full mx-auto px-2 md:px-4 pt-20 pb-32 md:py-24">
 
         <!-- Strategy Switcher (Compact, low-profile horizontal button row directly underneath header) -->
-        <div class="mb-5 flex justify-center gap-2 max-w-2xl mx-auto theme-transition">
+        <div class="mb-4 flex justify-center gap-2 max-w-2xl mx-auto theme-transition">
             <button id="strategy-scanner"
-                class="text-accent border-2 font-bold py-4 rounded text-[10px] tracking-[0.2em] transition-all duration-300 ease-out active:scale-[0.99] hover:transform-none uppercase"
-                style="background-color: var(--accent-dim); border-color: var(--accent-color); color: var(--accent-color); box-shadow: 0 0 16px var(--accent-dim);">
+                class="bg-emerald-50/40 text-emerald-700 border-2 border-emerald-500 font-bold shadow-[0_2px_10px_rgba(5,150,105,0.06)] py-4 rounded text-[10px] tracking-[0.2em] transition-all duration-300 ease-out active:scale-[0.99] hover:transform-none uppercase dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-500/80 dark:shadow-[0_0_15px_rgba(16,185,129,0.15)]">
                 MOMENTUM VELOCITY
             </button>
             <button id="strategy-momentum-open" data-strategy="momentum_open_30"
-                class="text-slate-400 border border-border hover:-translate-y-[1px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase bg-surface hover:text-accent hover:border-accent/40">
+                class="bg-white hover:bg-emerald-50/30 text-slate-600 hover:text-emerald-600 border border-slate-200/80 hover:border-emerald-300/80 shadow-sm hover:shadow-[0_8px_20px_-4px_rgba(5,150,105,0.12)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase dark:bg-[#0d131f]/60 dark:text-slate-400 dark:border-slate-800/80 dark:hover:bg-[#111827] dark:hover:text-emerald-400 dark:hover:border-emerald-500/40 dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.08)]">
                 MOMENTUM VORTEX
             </button>
+        </div>
+
+        <!-- Hero Section (Tactical Pod) -->
+        <div
+            class="mb-6 p-3 rounded-xl border border-[#10b98115] bg-slate-950/40 backdrop-blur-xl max-w-xs mx-auto text-center relative overflow-hidden shadow-md tactical-card">
+            <div class="relative z-10 flex items-center justify-center gap-2">
+                <div class="h-6 w-6 text-slate-100">
+                    <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="h-full w-full">
+                        <path d="M50 20L20 80H32L50 44L68 80H80L50 20Z" fill="currentColor" />
+                        <path d="M42 60H58L65 75H35L42 60Z" fill="#10B981" />
+                        <path d="M75 25L85 15M85 15H77M85 15V23" stroke="#10B981" stroke-width="5"
+                            stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <div class="text-left">
+                    <h1 class="text-sm brand-text leading-none">
+                        <span class="text-slate-100">AAPNA</span><span class="text-emerald-400 brand-glow">TRADER</span>
+                    </h1>
+                    <p class="text-[7px] font-bold text-accent/50 uppercase tracking-widest leading-none mt-0.5">
+                        MOMENTUM LOGIC DECK
+                    </p>
+                </div>
+            </div>
+            <!-- Ambient Background Glow -->
+            <div class="absolute -bottom-10 -left-10 w-24 h-24 bg-accent/5 blur-[40px] rounded-full"></div>
+            <div class="absolute -top-10 -right-10 w-24 h-24 bg-accent/5 blur-[40px] rounded-full"></div>
         </div>
 
         <!-- Universe, Sector, and MCAP Selectors -->
@@ -739,25 +913,16 @@
                 <select id="sector-selector"
                     class="w-full bg-background border border-border text-slate-300 py-4 px-4 rounded text-[10px] font-bold tracking-widest uppercase focus:outline-none focus:border-accent transition-all cursor-pointer">
                     <option value="ALL">ALL</option>
-                    <option value="DEFENCE">DEFENCE</option>
-                    <option value="AUTO">AUTO</option>
-                    <option value="PHARMA & HEALTH">PHARMA & HEALTH</option>
-                    <option value="FMCG">FMCG</option>
-                    <option value="BANKS">BANKS</option>
-                    <option value="FINANCE & CO">FINANCE & CO</option>
-                    <option value="TELECOM">TELECOM</option>
-                    <option value="IT">IT</option>
-                    <option value="METAL & MINING">METAL & MINING</option>
-                    <option value="POWER & UTILITIES">POWER & UTILITIES</option>
-                    <option value="OIL, GAS & PETROCHEM">OIL, GAS & PETROCHEM</option>
-                    <option value="INFRASTRUCTURE">INFRASTRUCTURE</option>
-                    <option value="REALTY">REALTY</option>
-                    <option value="MEDIA">MEDIA</option>
-                    <option value="INDUSTRIAL & CAP GOODS">INDUSTRIAL & CAP GOODS</option>
-                    <option value="TEXTILES & APPAREL">TEXTILES & APPAREL</option>
-                    <option value="FERTILIZERS & AGROCHEM">FERTILIZERS & AGROCHEM</option>
-                    <option value="LOGISTICS & TRANSPORT">LOGISTICS & TRANSPORT</option>
-                    <option value="DIVERSIFIED & CONSUMER SERVICES">DIVERSIFIED & CONSUMER SERVICES</option>
+                    <option value="NIFTY AUTO">NIFTY AUTO</option>
+                    <option value="NIFTY ENERGY">NIFTY ENERGY</option>
+                    <option value="NIFTY IT">NIFTY IT</option>
+                    <option value="NIFTY METAL">NIFTY METAL</option>
+                    <option value="NIFTY PHARMA">NIFTY PHARMA</option>
+                    <option value="NIFTY INFRA">NIFTY INFRA</option>
+                    <option value="NIFTY REALTY">NIFTY REALTY</option>
+                    <option value="NIFTY FMCG">NIFTY FMCG</option>
+                    <option value="NIFTY MEDIA">NIFTY MEDIA</option>
+                    <option value="NIFTY DEFENCE">NIFTY DEFENCE</option>
                 </select>
             </div>
             <div class="space-y-2">
@@ -792,7 +957,7 @@
 
                 <!-- Cyber-Accordion Toggle -->
                 <button id="toggle_advanced_btn"
-                    class="w-full mb-4 bg-slate-50 dark:bg-[#0a0f18] border border-slate-200 dark:border-border hover:border-accent/50 dark:hover:border-accent/40 shadow-sm hover:shadow-[0_0_15px_rgba(0,212,170,0.1)] text-slate-600 dark:text-accent font-bold py-3 px-4 rounded text-[10px] tracking-[0.15em] uppercase transition-all flex items-center justify-center gap-2 group relative overflow-hidden">
+                    class="w-full mb-4 bg-slate-50 dark:bg-[#0a0f18] border border-slate-200 dark:border-border hover:border-accent/50 dark:hover:border-accent/40 shadow-sm hover:shadow-[0_0_15px_rgba(16,185,129,0.1)] text-slate-600 dark:text-accent font-bold py-3 px-4 rounded text-[10px] tracking-[0.15em] uppercase transition-all flex items-center justify-center gap-2 group relative overflow-hidden">
                     <div
                         class="absolute inset-0 bg-gradient-to-r from-accent/0 via-accent/5 to-accent/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                     </div>
@@ -962,13 +1127,13 @@
                 <div
                     class="flex flex-wrap items-center justify-center gap-2 pt-6 border-t border-border/40 font-mono text-[10px] md:text-xs text-slate-400 select-none">
                     <span onclick="openModal('report-modal')"
-                        class="hover:text-accent transition-colors cursor-pointer">Report a Problem</span>
+                        class="hover:text-emerald-400 transition-colors cursor-pointer">Report a Problem</span>
                     <span class="text-slate-600">|</span>
                     <span onclick="openModal('feedback-modal')"
-                        class="hover:text-accent transition-colors cursor-pointer">Give Feedback</span>
+                        class="hover:text-emerald-400 transition-colors cursor-pointer">Give Feedback</span>
                     <span class="text-slate-600">|</span>
                     <span onclick="openModal('privacy-modal')"
-                        class="hover:text-accent transition-colors cursor-pointer">Privacy Policy</span>
+                        class="hover:text-emerald-400 transition-colors cursor-pointer">Privacy Policy</span>
                 </div>
 
             </div>
@@ -1054,7 +1219,7 @@
                         <div
                             class="flex items-center border border-slate-200 dark:border-slate-800/80 rounded-full p-0.5 bg-slate-100/50 dark:bg-[#0d131f] text-[9px] md:text-[10px] font-bold shadow-sm dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)] select-none">
                             <button id="view-mode-list"
-                                class="px-2.5 py-1 rounded-full shadow-sm transition-all uppercase tracking-wider text-[#FFC400] bg-white dark:bg-background"
+                                class="px-2.5 py-1 rounded-full shadow-sm transition-all uppercase tracking-wider text-[#10B981] bg-white dark:bg-background"
                                 style="color: var(--accent-color);">List</button>
                             <button id="view-mode-maze"
                                 class="px-2.5 py-1 rounded-full transition-all uppercase tracking-wider text-slate-500 hover:text-accent">Maze</button>
@@ -1078,7 +1243,7 @@
                 <!-- Prominent Toggle: Apply Strategy Filters to Sector -->
                 <div class="mb-4">
                     <label
-                        class="flex items-center justify-between p-3.5 border border-border rounded-lg bg-surface/40 hover:bg-surface/70 hover:border-accent/40 shadow-sm cursor-pointer select-none text-[10px] font-bold uppercase tracking-wider text-slate-300 hover:text-accent transition-all hover:drop-shadow-[0_0_8px_rgba(0,212,170,0.15)] theme-transition">
+                        class="flex items-center justify-between p-3.5 border border-border rounded-lg bg-surface/40 hover:bg-surface/70 hover:border-accent/40 shadow-sm cursor-pointer select-none text-[10px] font-bold uppercase tracking-wider text-slate-300 hover:text-accent transition-all hover:drop-shadow-[0_0_8px_rgba(0,255,157,0.15)] theme-transition">
                         <span>APPLY STRATEGY FILTERS TO SECTOR</span>
                         <input type="checkbox" id="apply-sector-filters" class="cyber-checkbox !mr-0">
                     </label>
@@ -1108,13 +1273,13 @@
         <div>&copy; 2026 AAPNATRADER. All rights reserved.</div>
         <div class="flex flex-wrap items-center justify-center gap-3">
             <span onclick="openModal('report-modal')"
-                class="hover:text-accent transition-colors cursor-pointer">Report a Problem</span>
+                class="hover:text-emerald-400 transition-colors cursor-pointer">Report a Problem</span>
             <span class="text-slate-600">|</span>
             <span onclick="openModal('feedback-modal')"
-                class="hover:text-accent transition-colors cursor-pointer">Give Feedback</span>
+                class="hover:text-emerald-400 transition-colors cursor-pointer">Give Feedback</span>
             <span class="text-slate-600">|</span>
             <span onclick="openModal('privacy-modal')"
-                class="hover:text-accent transition-colors cursor-pointer">Privacy Policy</span>
+                class="hover:text-emerald-400 transition-colors cursor-pointer">Privacy Policy</span>
         </div>
     </footer>
 
@@ -1301,7 +1466,7 @@
             if (isAdvancedOpen) {
                 advancedFiltersPanel.classList.remove('max-h-0', 'opacity-0');
                 advancedFiltersPanel.classList.add('max-h-[1000px]', 'opacity-100');
-                toggleAdvancedText.innerHTML = '⚙️ COLLAPSE ADVANCED MATRIX CONTROLS <span class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-[2px] bg-accent rounded-full shadow-[0_0_8px_rgba(0,212,170,0.8)]"></span>';
+                toggleAdvancedText.innerHTML = '⚙️ COLLAPSE ADVANCED MATRIX CONTROLS <span class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-12 h-[2px] bg-accent rounded-full shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>';
                 toggleAdvancedText.classList.add('text-accent');
                 toggleAdvancedBtn.classList.add('border-accent/50');
 
@@ -1408,7 +1573,7 @@
 
             if (mode === 'list') {
                 // Normal Split Layout (List View)
-                viewModeListBtn.className = 'px-2.5 py-1 rounded-full shadow-sm transition-all uppercase tracking-wider text-[#FFC400] bg-white dark:bg-background';
+                viewModeListBtn.className = 'px-2.5 py-1 rounded-full shadow-sm transition-all uppercase tracking-wider text-[#10B981] bg-white dark:bg-background';
                 viewModeListBtn.style.color = 'var(--accent-color)';
                 viewModeMazeBtn.className = 'px-2.5 py-1 rounded-full transition-all uppercase tracking-wider text-slate-500 hover:text-accent';
                 viewModeMazeBtn.style.color = '';
@@ -1421,7 +1586,7 @@
                 }
             } else {
                 // Full Screen Layout (Maze View)
-                viewModeMazeBtn.className = 'px-2.5 py-1 rounded-full shadow-sm transition-all uppercase tracking-wider text-[#FFC400] bg-white dark:bg-background';
+                viewModeMazeBtn.className = 'px-2.5 py-1 rounded-full shadow-sm transition-all uppercase tracking-wider text-[#10B981] bg-white dark:bg-background';
                 viewModeMazeBtn.style.color = 'var(--accent-color)';
                 viewModeListBtn.className = 'px-2.5 py-1 rounded-full transition-all uppercase tracking-wider text-slate-500 hover:text-accent';
                 viewModeListBtn.style.color = '';
@@ -1443,20 +1608,6 @@
 
         viewModeListBtn.addEventListener('click', () => setViewMode('list'));
         viewModeMazeBtn.addEventListener('click', () => setViewMode('maze'));
-
-        // Live terminal clock (IST)
-        function updateTerminalClock() {
-            const el = document.getElementById('terminal-clock');
-            if (!el) return;
-            const now = new Date();
-            const ist = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-            const h = String(ist.getHours()).padStart(2, '0');
-            const m = String(ist.getMinutes()).padStart(2, '0');
-            const s = String(ist.getSeconds()).padStart(2, '0');
-            el.textContent = `${h}:${m}:${s} IST`;
-        }
-        updateTerminalClock();
-        setInterval(updateTerminalClock, 1000);
 
         // Force-sync visual state on app boot
         document.getElementById('use_ema_filter').checked = false;
@@ -1495,17 +1646,17 @@
         // --- Client-side Search Filter (Debounced) ---
         tickerSearch.addEventListener('input', debounce((e) => {
             const query = e.target.value.toUpperCase();
-            const cards = signalsContainer.querySelectorAll('.card-anim');
+            const cards = signalsContainer.querySelectorAll('[data-ticker]');
 
             cards.forEach(card => {
-                const ticker = card.querySelector('h3').textContent.toUpperCase();
-                if (ticker.includes(query)) {
+                const ticker = card.getAttribute('data-ticker');
+                if (ticker && ticker.toUpperCase().includes(query)) {
                     card.style.display = '';
                 } else {
                     card.style.display = 'none';
                 }
             });
-        }, 150));
+        }, 120));
 
         // --- Theme Logic ---
         function updateFavicon(isLight) {
@@ -1611,7 +1762,7 @@
                 const useWeeklyCloseGate = document.getElementById('use_weekly_close_gate').checked ? 1 : 0;
                 const useAutoPullback = document.getElementById('use_auto_pullback').checked ? 1 : 0;
 
-                const response = await fetch(`/api/scan?strategy=${activeStrategy}&universe=${universe}&ema_fast=${emaFastVal}&ema_slow=${emaSlowVal}&min_volume=${minVolVal}&consolidation_days=${consolDays}&consolidation_range=${consolRange}&swing_run_pct=${swingRun}&base_pullback_pct=${basePct}&use_ema_filter=${useEma}&use_vol_filter=${useVol}&use_consolidation=${useConsol}&use_swing_run=${useSwing}&use_base_pullback=${useBase}&scan_combined=${scanCombinedVal}&pullback_offset=${pullbackOffset}&swing_gate_pct=${swingGatePct}&use_pullback_zone=${usePullback}&weekly_close_n=${weeklyCloseN}&use_weekly_close_gate=${useWeeklyCloseGate}&use_auto_pullback=${useAutoPullback}&sector=${encodeURIComponent(sector)}&min_mcap=${minMcapVal}&apply_sector_filters=${applySectorFiltersVal}`);
+                const response = await fetch(`/api/scan?strategy=${activeStrategy}&universe=${universe}&ema_fast=${emaFastVal}&ema_slow=${emaSlowVal}&min_volume=${minVolVal}&consolidation_days=${consolDays}&consolidation_range=${consolRange}&swing_run_pct=${swingRun}&base_pullback_pct=${basePct}&use_ema_filter=${useEma}&use_vol_filter=${useVol}&use_consolidation=${useConsol}&use_swing_run=${useSwing}&use_base_pullback=${useBase}&scan_combined=${scanCombinedVal}&pullback_offset=${pullbackOffset}&swing_gate_pct=${swingGatePct}&use_pullback_zone=${usePullback}&weekly_close_n=${weeklyCloseN}&use_weekly_close_gate=${useWeeklyCloseGate}&use_auto_pullback=${useAutoPullback}&sector=${sector}&min_mcap=${minMcapVal}&apply_sector_filters=${applySectorFiltersVal}`);
                 const result = await response.json();
 
                 if (result.status === 'success') {
@@ -1641,15 +1792,11 @@
         function updateStrategy(strategy) {
             activeStrategy = strategy;
 
-            const inactiveClass = 'text-slate-400 border border-border hover:-translate-y-[1px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase bg-surface hover:text-accent hover:border-accent/40';
-            const activeClass = 'text-accent border-2 font-bold py-4 rounded text-[10px] tracking-[0.2em] transition-all duration-300 ease-out active:scale-[0.99] hover:transform-none uppercase';
+            const inactiveClass = 'bg-white hover:bg-gradient-to-tr hover:from-white hover:to-emerald-50/30 text-slate-600 hover:text-emerald-600 border border-slate-200/80 hover:border-emerald-300/80 shadow-sm hover:shadow-[0_8px_20px_-4px_rgba(5,150,105,0.12)] hover:-translate-y-[2px] active:scale-[0.98] transition-all duration-300 ease-[cubic-bezier(0.25,0.8,0.25,1)] py-4 rounded text-[10px] tracking-[0.2em] uppercase dark:bg-[#0d131f]/60 dark:text-slate-400 dark:border-slate-800/80 dark:hover:bg-[#111827] dark:hover:text-emerald-400 dark:hover:border-emerald-500/30 dark:hover:shadow-[0_4px_20px_rgba(16,185,129,0.08)] dark:hover:-translate-y-[2px]';
+            const activeClass = 'bg-emerald-50/40 text-emerald-700 border-2 border-emerald-500 font-bold shadow-[0_2px_10px_rgba(5,150,105,0.06)] py-4 rounded text-[10px] tracking-[0.2em] transition-all duration-300 ease-out active:scale-[0.99] hover:transform-none uppercase dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-500/80 dark:shadow-[0_0_15px_rgba(16,185,129,0.15)] font-bold';
 
             [strategyScannerBtn, strategyMomentumOpenBtn].forEach(btn => {
                 btn.className = inactiveClass;
-                btn.style.backgroundColor = '';
-                btn.style.borderColor = '';
-                btn.style.color = '';
-                btn.style.boxShadow = '';
             });
 
             let activeBtn;
@@ -1659,10 +1806,6 @@
                 activeBtn = strategyMomentumOpenBtn;
             }
             activeBtn.className = activeClass;
-            activeBtn.style.backgroundColor = 'var(--accent-dim)';
-            activeBtn.style.borderColor = 'var(--accent-color)';
-            activeBtn.style.color = 'var(--accent-color)';
-            activeBtn.style.boxShadow = '0 0 16px var(--accent-dim)';
 
             // triggerScan();
         }
@@ -1688,7 +1831,7 @@
             });
 
             const isPositive = change >= 0;
-            const strokeColor = isPositive ? '#10B981' : '#FF3B30';
+            const strokeColor = isPositive ? '#10B981' : '#f87171';
             const gradientId = `sparkline-grad-${Math.random().toString(36).substr(2, 9)}`;
             const fillPoints = [
                 `${padding.toFixed(1)},${height.toFixed(1)}`,
@@ -1851,12 +1994,12 @@
                     <!-- Dynamic Timeframe Switcher Toolbar -->
                     <div id="chart-toolbar-${ticker}" class="flex items-center justify-between px-3 py-1.5 border-b border-slate-200/10 dark:border-slate-800/20 bg-slate-50/5 dark:bg-slate-900/10 select-none">
                         <div class="flex items-center gap-1.5" id="tf-buttons-${ticker}">
-                            <button data-tf="1D" class="px-2 py-0.5 rounded text-[10px] font-bold font-mono transition-all duration-150 active:scale-95 bg-accent text-white dark:bg-accent dark:text-slate-950 shadow-[0_0_8px_rgba(0,212,170,0.4)]">1D</button>
+                            <button data-tf="1D" class="px-2 py-0.5 rounded text-[10px] font-bold font-mono transition-all duration-150 active:scale-95 bg-emerald-500 text-white dark:bg-emerald-500 dark:text-slate-950 shadow-[0_0_8px_rgba(16,185,129,0.4)]">1D</button>
                             <button data-tf="1W" class="px-2 py-0.5 rounded text-[10px] font-bold font-mono transition-all duration-150 active:scale-95 bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-700/80 dark:hover:text-slate-200 border border-slate-200/40 dark:border-slate-700/40">1W</button>
                             <button data-tf="1M" class="px-2 py-0.5 rounded text-[10px] font-bold font-mono transition-all duration-150 active:scale-95 bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-700/80 dark:hover:text-slate-200 border border-slate-200/40 dark:border-slate-700/40">1M</button>
                         </div>
                         <div class="text-[9px] font-mono text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                             <span>SENTINEL MONITOR</span>
                         </div>
                     </div>
@@ -2105,7 +2248,7 @@
                                 offsetX: 62,
                                 style: {
                                     color: '#fff',
-                                    background: cmpColor,
+                                    background: '#10B981',
                                     fontSize: '9px',
                                     fontWeight: 'bold',
                                     fontFamily: 'JetBrains Mono'
@@ -2693,7 +2836,7 @@
             let isAlreadyActive = false;
             if (btnContainer) {
                 const activeBtn = btnContainer.querySelector(`button[data-tf="${tf}"]`);
-                if (activeBtn && activeBtn.classList.contains('bg-accent')) {
+                if (activeBtn && activeBtn.classList.contains('bg-emerald-500')) {
                     isAlreadyActive = true;
                 }
             }
@@ -2833,7 +2976,7 @@
                                 offsetX: 62,
                                 style: {
                                     color: '#fff',
-                                    background: cmpColor,
+                                    background: '#10B981',
                                     fontSize: '9px',
                                     fontWeight: 'bold',
                                     fontFamily: 'JetBrains Mono'
@@ -2849,7 +2992,7 @@
                 btnContainer.querySelectorAll('button').forEach(btn => {
                     const isCurrent = btn.getAttribute('data-tf') === tf;
                     if (isCurrent) {
-                        btn.className = 'px-2 py-0.5 rounded text-[10px] font-bold font-mono transition-all duration-150 active:scale-95 bg-accent text-white dark:bg-accent dark:text-slate-950 shadow-[0_0_8px_rgba(0,212,170,0.4)]';
+                        btn.className = 'px-2 py-0.5 rounded text-[10px] font-bold font-mono transition-all duration-150 active:scale-95 bg-emerald-500 text-white dark:bg-emerald-500 dark:text-slate-950 shadow-[0_0_8px_rgba(16,185,129,0.4)]';
                     } else {
                         btn.className = 'px-2 py-0.5 rounded text-[10px] font-bold font-mono transition-all duration-150 active:scale-95 bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:hover:bg-slate-700/80 dark:hover:text-slate-200 border border-slate-200/40 dark:border-slate-700/40';
                     }
@@ -3009,10 +3152,13 @@
                 const card = document.createElement('div');
                 card.setAttribute('data-ticker', stock.ticker);
                 if (activeViewMode === 'list') {
-                    card.className = 'grid grid-cols-2 md:grid-cols-6 gap-3 items-center py-1.5 px-3 text-xs border-b border-slate-200/20 dark:border-slate-800/60 bg-white/80 dark:bg-[#0b0f19]/90 hover:bg-slate-100/40 dark:hover:bg-slate-900/40 transition-all rounded-lg md:rounded-none card-anim relative overflow-hidden group cursor-pointer select-none transform-gpu shadow-sm hover:border-accent/80 dark:hover:border-accent/60 hover:shadow-[0_4px_12px_rgba(0,122,110,0.04)] dark:hover:shadow-[0_0_15px_rgba(0,212,170,0.08)] duration-200 font-mono';
+                    card.className = 'grid grid-cols-2 md:grid-cols-6 gap-3 items-center py-1.5 px-3 text-xs border-b border-slate-200/20 dark:border-slate-800/60 bg-white/80 dark:bg-[#0b0f19]/90 hover:bg-slate-100/40 dark:hover:bg-slate-900/40 transition-all rounded-lg md:rounded-none card-anim relative overflow-hidden group cursor-pointer select-none transform-gpu shadow-sm hover:border-emerald-500/80 dark:hover:border-emerald-500/60 hover:shadow-[0_4px_12px_rgba(5,150,105,0.04)] dark:hover:shadow-[0_0_15px_rgba(16,185,129,0.08)] duration-200 font-mono';
+                    card.style.contentVisibility = 'auto';
+                    card.style.containIntrinsicSize = '0 56px';
                 } else {
-                    card.className = 'rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/80 dark:bg-[#0b0f19]/90 shadow-md hover:border-accent/80 hover:shadow-[0_8px_30px_rgba(0,122,110,0.06)] dark:hover:border-accent/60 dark:hover:shadow-[0_0_25px_rgba(0,212,170,0.12)] hover:-translate-y-[1px] transition-all duration-300 card-anim relative overflow-hidden group p-0 transform-gpu';
+                    card.className = 'rounded-xl border border-slate-200/60 dark:border-slate-800/80 bg-white/80 dark:bg-[#0b0f19]/90 shadow-md hover:border-emerald-500/80 hover:shadow-[0_8px_30px_rgba(5,150,105,0.06)] dark:hover:border-emerald-500/60 dark:hover:shadow-[0_0_25px_rgba(16,185,129,0.12)] hover:-translate-y-[1px] transition-all duration-300 card-anim relative overflow-hidden group p-0 transform-gpu';
                 }
+                card.style.contain = 'layout style';
 
                 // --- Apply active search filter immediately ---
                 if (searchQuery && !stock.ticker.toUpperCase().includes(searchQuery)) {
@@ -3036,7 +3182,7 @@
                         <!-- Current Market Price (CMP) & percentage change inline -->
                         <div class="col-span-1 md:col-span-1 flex items-center justify-end md:justify-start gap-1.5 font-mono">
                             <span class="text-slate-600 dark:text-slate-400 font-mono">₹${stock.price.toLocaleString('en-IN')}</span>
-                            <span class="${stock.change >= 0 ? 'signal-up' : 'signal-down'} font-bold font-mono">(${stock.change >= 0 ? '+' : ''}${stock.change}%)</span>
+                            <span class="${stock.change >= 0 ? 'signal-up text-emerald-500' : 'signal-down text-rose-500'} font-bold font-mono">(${stock.change >= 0 ? '+' : ''}${stock.change}%)</span>
                         </div>
 
                         <!-- Technical Indicators (9 EMA, 20 EMA) -->
@@ -3046,16 +3192,11 @@
                         </div>
 
                         <!-- Volume Metrics (Raw Volume & Volume Multiplier badge) -->
-                        <div class="col-span-1 md:col-span-1 flex flex-wrap items-center gap-2 font-mono text-[11px]">
+                        <div class="col-span-1 md:col-span-1 flex items-center gap-2 font-mono text-[11px]">
                             <span class="text-slate-400 dark:text-slate-500 font-mono">Vol:<span class="font-bold text-slate-700 dark:text-slate-300 ml-0.5 font-mono">${formatVolume(rawVolume)}</span></span>
-                            <span class="px-1 py-px text-[9px] bg-slate-100 dark:bg-slate-800/50 border border-slate-200/40 dark:border-slate-700/50 rounded-none ${stock.vol_multiple >= 2.0 ? 'text-[#10B981] border-[#10B981]/30 shadow-[0_0_10px_rgba(16,185,129,0.15)]' : 'text-slate-600 dark:text-slate-400'} font-bold select-none font-mono">
+                            <span class="px-1 py-px text-[9px] bg-slate-100 dark:bg-slate-800/50 border border-slate-200/40 dark:border-slate-700/50 rounded-none ${stock.vol_multiple >= 2.0 ? 'text-[#00ff9d] border-[#00ff9d]/30 shadow-[0_0_10px_rgba(0,255,157,0.1)]' : 'text-slate-600 dark:text-slate-400'} font-bold select-none font-mono">
                                 ${stock.vol_multiple}x
                             </span>
-                            ${stock.mcap ? `
-                            <span class="px-1 py-px text-[9px] bg-slate-100 dark:bg-slate-800/50 border border-slate-200/40 dark:border-slate-700/50 rounded-none text-slate-600 dark:text-slate-400 font-bold select-none font-mono">
-                                ₹${stock.mcap} Cr
-                            </span>
-                            ` : ''}
                         </div>
 
                         <!-- Mini Sparkline Chart asset (Lazy observed) -->
@@ -3065,8 +3206,8 @@
 
                         <!-- Show/Hide Action button toggles -->
                         <div class="col-span-1 md:col-span-1 flex justify-end">
-                            <button class="toggle-chart-btn text-[9px] font-bold text-accent dark:text-accent dark:hover:text-accent tracking-wider transition-colors duration-200 border border-accent/20 hover:border-accent px-1.5 py-0.5 rounded-none flex items-center gap-1 bg-accent/5" data-ticker="${stock.ticker}">
-                                <span class="w-1 h-1 bg-accent rounded-none animate-pulse"></span>
+                            <button class="toggle-chart-btn text-[9px] font-bold text-emerald-600 dark:text-emerald-400 dark:hover:text-emerald-300 tracking-wider transition-colors duration-200 border border-emerald-500/20 hover:border-emerald-500 px-1.5 py-0.5 rounded-none flex items-center gap-1 bg-emerald-500/5" data-ticker="${stock.ticker}">
+                                <span class="w-1 h-1 bg-emerald-500 rounded-none animate-pulse"></span>
                                 <span class="btn-lbl">SHOW CHART</span>
                             </button>
                         </div>
@@ -3074,8 +3215,8 @@
                         <!-- Inline Chart Wrapper -->
                         <div class="col-span-2 md:col-span-6 relative w-full">
                             <div id="zoom-overlay-${stock.ticker}" class="hidden absolute bottom-3 right-24 z-[99] flex gap-2 select-none">
-                                <button class="w-7 h-7 rounded-md bg-white/90 dark:bg-slate-900/90 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60 hover:border-accent/50 dark:hover:border-accent/50 text-slate-600 dark:text-slate-300 hover:text-accent dark:hover:text-accent flex items-center justify-center text-base font-bold shadow-md transition-all duration-200 active:scale-90 cursor-pointer font-mono hover:shadow-[0_0_8px_rgba(0,212,170,0.2)] dark:hover:shadow-[0_0_8px_rgba(0,212,170,0.3)]" onclick="zoomInteractiveChart('${stock.ticker}', 'in')" title="Zoom In">+</button>
-                                <button class="w-7 h-7 rounded-md bg-white/90 dark:bg-slate-900/90 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60 hover:border-accent/50 dark:hover:border-accent/50 text-slate-600 dark:text-slate-300 hover:text-accent dark:hover:text-accent flex items-center justify-center text-base font-bold shadow-md transition-all duration-200 active:scale-90 cursor-pointer font-mono hover:shadow-[0_0_8px_rgba(0,212,170,0.2)] dark:hover:shadow-[0_0_8px_rgba(0,212,170,0.3)]" onclick="zoomInteractiveChart('${stock.ticker}', 'out')" title="Zoom Out">-</button>
+                                <button class="w-7 h-7 rounded-md bg-white/90 dark:bg-slate-900/90 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center justify-center text-base font-bold shadow-md transition-all duration-200 active:scale-90 cursor-pointer font-mono hover:shadow-[0_0_8px_rgba(16,185,129,0.2)] dark:hover:shadow-[0_0_8px_rgba(16,185,129,0.3)]" onclick="zoomInteractiveChart('${stock.ticker}', 'in')" title="Zoom In">+</button>
+                                <button class="w-7 h-7 rounded-md bg-white/90 dark:bg-slate-900/90 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center justify-center text-base font-bold shadow-md transition-all duration-200 active:scale-90 cursor-pointer font-mono hover:shadow-[0_0_8px_rgba(16,185,129,0.2)] dark:hover:shadow-[0_0_8px_rgba(16,185,129,0.3)]" onclick="zoomInteractiveChart('${stock.ticker}', 'out')" title="Zoom Out">-</button>
                             </div>
                             <div id="tv-chart-container-${stock.ticker}" class="hidden mt-2 w-full h-[400px] border border-slate-200/30 dark:border-slate-800/30 rounded-xl overflow-hidden bg-slate-900/10"></div>
                         </div>
@@ -3097,28 +3238,23 @@
                                         <span class="text-slate-600 dark:text-slate-400 font-mono">₹${stock.price.toLocaleString('en-IN')}</span>
                                         <span class="${stock.change >= 0 ? 'signal-up' : 'signal-down'} font-mono">(${stock.change >= 0 ? '+' : ''}${stock.change}%)</span>
                                     </div>
-                                    <div class="flex items-center gap-1 font-mono text-[9px] px-1.5 py-0.5 rounded font-bold border ${stock.vol_multiple >= 2.0 ? 'bg-[#10B981]/10 text-[#10B981] border-[#10B981]/30 shadow-[0_0_10px_rgba(16,185,129,0.15)]' : 'bg-accent/10 text-accent dark:text-accent border-accent/20'}">
+                                    <div class="flex items-center gap-1 font-mono text-[9px] px-1.5 py-0.5 rounded font-bold border ${stock.vol_multiple >= 2.0 ? 'bg-[#00ff9d]/10 text-[#00ff9d] border-[#00ff9d]/30 shadow-[0_0_10px_rgba(0,0,0,0.15)]' : 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20'}">
                                         <span class="font-mono">Vol: ${formatVolume(rawVolume)}</span>
                                         <span class="font-mono">(${stock.vol_multiple}x)</span>
                                     </div>
-                                    ${stock.mcap ? `
-                                    <div class="flex items-center gap-1 font-mono text-[9px] px-1.5 py-0.5 rounded font-bold border bg-slate-100 dark:bg-slate-800/50 border-slate-200/40 dark:border-slate-700/50 text-slate-600 dark:text-slate-400">
-                                        <span class="font-mono">MCap: ₹${stock.mcap} Cr</span>
-                                    </div>
-                                    ` : ''}
                                 </div>
                             </div>
                             
                             <!-- Chart Area Wrapper -->
                             <div class="w-full h-[360px] border-t border-slate-200/25 dark:border-slate-800/25 bg-slate-900/10 relative rounded-b-xl overflow-hidden">
                                 <div id="zoom-overlay-${stock.ticker}" class="hidden absolute bottom-3 right-24 z-[99] flex gap-2 select-none">
-                                    <button class="w-7 h-7 rounded-md bg-white/90 dark:bg-slate-900/90 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60 hover:border-accent/50 dark:hover:border-accent/50 text-slate-600 dark:text-slate-300 hover:text-accent dark:hover:text-accent flex items-center justify-center text-base font-bold shadow-md transition-all duration-200 active:scale-90 cursor-pointer font-mono hover:shadow-[0_0_8px_rgba(0,212,170,0.2)] dark:hover:shadow-[0_0_8px_rgba(0,212,170,0.3)]" onclick="zoomInteractiveChart('${stock.ticker}', 'in')" title="Zoom In">+</button>
-                                    <button class="w-7 h-7 rounded-md bg-white/90 dark:bg-slate-900/90 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60 hover:border-accent/50 dark:hover:border-accent/50 text-slate-600 dark:text-slate-300 hover:text-accent dark:hover:text-accent flex items-center justify-center text-base font-bold shadow-md transition-all duration-200 active:scale-90 cursor-pointer font-mono hover:shadow-[0_0_8px_rgba(0,212,170,0.2)] dark:hover:shadow-[0_0_8px_rgba(0,212,170,0.3)]" onclick="zoomInteractiveChart('${stock.ticker}', 'out')" title="Zoom Out">-</button>
+                                    <button class="w-7 h-7 rounded-md bg-white/90 dark:bg-slate-900/90 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center justify-center text-base font-bold shadow-md transition-all duration-200 active:scale-90 cursor-pointer font-mono hover:shadow-[0_0_8px_rgba(16,185,129,0.2)] dark:hover:shadow-[0_0_8px_rgba(16,185,129,0.3)]" onclick="zoomInteractiveChart('${stock.ticker}', 'in')" title="Zoom In">+</button>
+                                    <button class="w-7 h-7 rounded-md bg-white/90 dark:bg-slate-900/90 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60 hover:border-emerald-500/50 dark:hover:border-emerald-500/50 text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center justify-center text-base font-bold shadow-md transition-all duration-200 active:scale-90 cursor-pointer font-mono hover:shadow-[0_0_8px_rgba(16,185,129,0.2)] dark:hover:shadow-[0_0_8px_rgba(16,185,129,0.3)]" onclick="zoomInteractiveChart('${stock.ticker}', 'out')" title="Zoom Out">-</button>
                                 </div>
                                 <div id="tv-chart-container-${stock.ticker}" class="w-full h-full">
                                     <!-- Placeholder that loads automatically or on-click -->
                                     <div class="absolute inset-0 flex flex-col items-center justify-center text-[10px] text-slate-500 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors select-none" onclick="loadInteractiveChart('${stock.ticker}', event)">
-                                        <div class="w-1.5 h-1.5 bg-accent rounded-full animate-pulse mb-1"></div>
+                                        <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse mb-1"></div>
                                         <span class="font-bold">CLICK TO LOAD CHART</span>
                                     </div>
                                 </div>
@@ -3304,12 +3440,12 @@
             btn.addEventListener('click', () => {
                 // Clear active states
                 emojiButtons.forEach(b => {
-                    b.classList.remove('bg-accent/10', 'border-accent/50', 'text-accent', 'shadow-[0_0_10px_rgba(0,212,170,0.15)]');
+                    b.classList.remove('bg-emerald-500/10', 'border-emerald-500/50', 'text-emerald-400', 'shadow-[0_0_10px_rgba(16,185,129,0.15)]');
                     b.classList.add('border-transparent');
                 });
                 // Set active
                 btn.classList.remove('border-transparent');
-                btn.classList.add('bg-accent/10', 'border-accent/50', 'text-accent', 'shadow-[0_0_10px_rgba(0,212,170,0.15)]');
+                btn.classList.add('bg-emerald-500/10', 'border-emerald-500/50', 'text-emerald-400', 'shadow-[0_0_10px_rgba(16,185,129,0.15)]');
 
                 feedbackRatingVal.value = btn.getAttribute('data-rating');
             });
@@ -3369,7 +3505,7 @@
                         feedbackForm.reset();
                         // Reset emoji active states
                         emojiButtons.forEach(b => {
-                            b.classList.remove('bg-accent/10', 'border-accent/50', 'text-accent', 'shadow-[0_0_10px_rgba(0,212,170,0.15)]');
+                            b.classList.remove('bg-emerald-500/10', 'border-emerald-500/50', 'text-emerald-400', 'shadow-[0_0_10px_rgba(16,185,129,0.15)]');
                             b.classList.add('border-transparent');
                         });
                         feedbackRatingVal.value = '';
@@ -3391,7 +3527,7 @@
             const toast = document.createElement('div');
             toast.id = 'transient-toast';
             toast.className = `fixed bottom-6 right-6 px-4 py-3 rounded-md font-mono text-[10px] uppercase tracking-wider z-[999999] shadow-xl border transition-all duration-300 transform translate-y-0 opacity-100 ${type === 'success'
-                    ? 'bg-[#0d131f]/95 border-accent/40 text-accent shadow-emerald-950/20'
+                    ? 'bg-[#0d131f]/95 border-emerald-500/40 text-emerald-400 shadow-emerald-950/20'
                     : 'bg-[#0d131f]/95 border-red-500/40 text-red-400 shadow-red-950/20'
                 }`;
 
@@ -3399,7 +3535,7 @@
                 <div class="flex items-center gap-2">
                     <span class="relative flex h-2 w-2">
                         <span class="absolute inline-flex h-full w-full rounded-full ${type === 'success' ? 'bg-emerald-400' : 'bg-red-400'} opacity-75 animate-ping"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 ${type === 'success' ? 'bg-accent' : 'bg-red-500'}"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 ${type === 'success' ? 'bg-emerald-500' : 'bg-red-500'}"></span>
                     </span>
                     <span>${message}</span>
                 </div>
@@ -3413,37 +3549,6 @@
                 setTimeout(() => toast.remove(), 300);
             }, 4000);
         }
-
-        async function updateLiveTickerTape() {
-            const tickerTrack = document.getElementById('dynamic-ticker-track');
-            if (!tickerTrack) return;
-            try {
-                const response = await fetch('/api/live_indices');
-                const data = await response.json();
-                if (data.status === 'success' && data.indices) {
-                    let tickerHTML = '';
-                    for (let loop = 0; loop < 2; loop++) {
-                        tickerHTML += `<span class="inline-flex items-center gap-6 px-4">`;
-                        data.indices.forEach((idx, i) => {
-                            const isUp = idx.change >= 0;
-                            const signalClass = isUp ? 'signal-up text-emerald-500' : 'signal-down text-rose-500';
-                            const prefix = isUp ? '+' : '';
-                            tickerHTML += `
-                                <span class="text-slate-500">${idx.name.toUpperCase()}</span>
-                                <span class="${signalClass}">${idx.value.toLocaleString('en-IN', {minimumFractionDigits: 2})} ${prefix}${idx.change.toFixed(2)}%</span>
-                                ${i < data.indices.length - 1 ? '<span class="text-slate-700">|</span>' : ''}
-                            `;
-                        });
-                        tickerHTML += `<span class="text-slate-700">|</span> <span class="text-accent uppercase tracking-widest">AAPNATRADER TERMINAL — REAL-TIME MATRIX MONITOR</span></span>`;
-                    }
-                    tickerTrack.innerHTML = tickerHTML;
-                }
-            } catch (error) {
-                console.warn("Ticker tape sync failed, retrying:", error);
-            }
-        }
-        updateLiveTickerTape();
-        setInterval(updateLiveTickerTape, 30000);
     </script>
     <!-- Global card click tab-opening intercepted handler removed in favor of inline show/hide buttons and grid views -->
 </body>

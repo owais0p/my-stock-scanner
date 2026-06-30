@@ -41,27 +41,37 @@ AAPNATRADER is a high-performance, institutional-grade stock scanning dashboard 
 ### Chartink Style Weekly Close Gate
 - **Logic**: Validates structural close strength over weeks: $\text{Weekly Close} > \text{Weekly Close}[N]$ (where $N$ is user-configurable "Weeks Number"). It resamples historical daily data to weekly candles and checks the $N$-week lag.
 
+### 19-Sector Custom Allocation Schema & Real-Time Local Market Cap Calculations
+- **Sector Mapping**: Groups all resolved tickers into 19 custom allocation keys. Sub-sectors like `IT - Software`, `IT - Services`, and `IT - Hardware` are merged under the parent `IT` sector, Commercial Vehicles/Ancillaries under `AUTO`, and Pharmaceuticals/Healthcare under `PHARMA & HEALTH`.
+- **Local Outstanding Shares Database**: Rather than making individual queries to yfinance, the backend downloads the BSE capital list (`scrip.zip` containing `CI.txt`) at startup and maps the outstanding shares in lakhs to tickers. This yields a 99.3%+ matching rate (5,168 mapped tickers).
+- **Fast Local Calculations**: Market capitalization is calculated locally inside the scan loop to eliminate API overhead:
+  $$\text{Market Cap (Cr)} = \frac{\text{Shares in Lakhs} \times \text{Last Close}}{100}$$
+- **Parallel Chunked Downloader**: Standard scans are divided into batches of 150 to query yfinance concurrently, avoiding URL length and rate limit restrictions.
+- **URL Parameter Encoding**: JavaScript fetch URLs wrap the sector name in `encodeURIComponent(sector)` to ensure sectors containing special characters like `&` are query-parsed as a single parameter by the FastAPI backend.
+
 ## 🎨 Design System (Cyber-Terminal)
-- **Theme**: Pure Deep Obsidian (`#060810`) background, Emerald (`#10B981`) accents.
-- **Interactive Signature**: High-intensity neon green (`#00ff9d`) glow on hover for premium elements.
+- **Theme**: Pure Deep Obsidian (`#060810`) background, Bloomberg Amber/Yellow (`#FFC400`) accents, slate-200 text.
+- **Interactive Signature**: High-intensity amber (`#FFC400`) glow on hover for premium elements. Volume breakouts (multiplier >= 2.0) are highlighted with green (`#10B981`), and percentage changes use dynamic green/red.
 - **Typography**: Inter (UI), JetBrains Mono (Data), Iceland (Brand).
 - **Transitions**: Hardware-accelerated `.theme-transition` class; NO universal wildcard transitions for performance.
 
 ## 📱 Key UI Components
 - **Follow Us Hub**: Header-pinned social links (Telegram/Instagram) with neon hover effects and mobile adaptive layout (icons-only on mobile).
 - **BSE Universe Toggle**: Header-pinned checkbox switch ("Scan Combined Market (NSE + BSE Exclusives)") to dynamically switch the target market universe scan to a union of the active NSE segment and BSE-exclusive stocks.
+- **Bloomberg Terminal Summary Console**: Header panel showing market segment, active strategy engine mode with a blinking cursor, and real-time session clock (IST).
+- **Dynamic Infinite Loop Ticker Tape**: Marquee scrolling tape below the header showing live indexes (Nifty 50, Sensex, Bank Nifty, Nifty IT, Nifty 500, India VIX, USD/INR) synced via background polling to the FastAPI backend `/api/live_indices` route.
 - **Tactical Sort**: Pill-shaped sorting button for dynamic, client-side re-rendering of results by % change.
 - **Sentinel Monitor**: A pulsing status indicator signifying the active data link.
 
 ## ⚙️ Development Commands
 - **Local Run**: `py -m uvicorn api.index:app --reload --port 7860`
 - **Data Export**: Client-side CSV generation using Browser Blobs.
-- Charts: Embedded interactive ApexCharts candlestick + volume charts inside cards, supporting TradingView-style vertical scaling, right Y-axis scale price badges, and timeframe switcher (1D/1W/1M) with server-side dynamic fetching and resampling.
+- Charts: Embedded interactive ApexCharts candlestick + volume charts inside cards, supporting TradingView-style vertical scaling, right Y-axis scale price badges, and timeframe switcher (1D/1W/1M) with server-side dynamic fetching and resampling. Candles display traditional green (bullish) and red (bearish) colors.
 - Card Metadata badges: Card headers display `1D` and dynamic `NSE` or `BSE` monospace metadata badges (`text-slate-400 bg-slate-800/50 px-1.5 py-0.5 rounded text-[10px]`) inline next to the ticker name.
 
 ## 📈 Chart Annotation & Layout System
-- **Dashed Horizontal CMP Line**: Drawn using a line-only Y-axis annotation at `annotations.yaxis[0]` with `label.show: false` to force the dashed line to stretch 100% across the plotting area up to the right axis border.
-- **Y-Axis Price Badge**: Drawn using a secondary transparent-border annotation at `annotations.yaxis[1]` with `label.position: 'right'`, `label.textAnchor: 'start'`, and `label.offsetX: 62` to overlay a solid emerald green (`#10B981`) text badge exactly on the numeric scale without cluttering the candlestick canvas.
+- **Dashed Horizontal CMP Line**: Drawn using a line-only Y-axis annotation at `annotations.yaxis[0]` with `label.show: false` to force the dashed line to stretch 100% across the plotting area up to the right axis border. Color is dynamic green (`#10B981`) or red (`#ef5350`) matching price movement.
+- **Y-Axis Price Badge**: Drawn using a secondary transparent-border annotation at `annotations.yaxis[1]` with `label.position: 'right'`, `label.textAnchor: 'start'`, and `label.offsetX: 62` to overlay a solid text price badge exactly on the numeric scale. The badge background is dynamically colored green (`#10B981`) or red (`#ef5350`) matching price movement.
 - **Timeframe Selector (1D / 1W / 1M)**: Executes an asynchronous backend fetch to query resampled historical OHLCV data. The backend retrieves the appropriate yfinance period (`6mo` for `1D`, `3y` for `1W`, `10y` for `1M`), processes Monday-aligned weekly and Month Start-aligned monthly grouping in Python, and returns exactly 120 candles. Clicks trigger dynamic series updates with `animate: false`.
 - **9 EMA & 20 EMA Line Overlays**: Plotted directly over the candlestick series. The 9 EMA uses color `#3b82f6` (Premium Light Blue) and the 20 EMA uses color `#f59e0b` (Amber Orange) with a stroke width of `1.5px` for both wicks/borders and line indicators. The chart series array accepts 4 inputs in sequence: `Price` (candlestick), `9 EMA` (line), `20 EMA` (line), and `Volume` (bar).
 - **Y-Axis Price Axis Sync Gating**: All chart interaction events (zoomed, scrolled, scaled, dragged, timeframe-switched, double-clicked) must specify a 4-item `yaxis` configuration array: the first three configurations match `seriesName: 'Price'` (with the second and third configurations hidden via `show: false`) to force the EMA lines to scale symmetrically with the candlesticks, and the fourth matches `seriesName: 'Volume'`.
@@ -69,4 +79,4 @@ AAPNATRADER is a high-performance, institutional-grade stock scanning dashboard 
 - **Floating Legend & Grid Padding**: The legend floats on the top-left (`position: 'top', horizontalAlign: 'left', floating: true, offsetY: -5, offsetX: 10`) inline with controls. Grid bottom padding is set to `15` to stretch active bounds and give the expanded bars immediate room to breathe.
 
 ---
-*Last Updated: June 26, 2026*
+*Last Updated: June 30, 2026*

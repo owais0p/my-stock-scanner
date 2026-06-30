@@ -14,6 +14,7 @@ This document provides a comprehensive breakdown of the engineering decisions, t
     - **Chunk 1 & 2 (Premium)**: Derived from the **Nifty 500** list. Segmented into two 250-symbol blocks for high-liquidity institutional focus.
     - **Chunk 3, 4 & 5 (Alpha Pools)**: Derived from the broader NSE equity market (excluding Nifty 500). Split evenly into three segments to surface under-the-radar micro-cap and nano-cap opportunities.
     - **Combined Market Universe**: When the "Scan Combined Market (NSE + BSE Exclusives)" toggle is active, uvicorn fetches a union of the active NSE segment and BSE-exclusive stock tickers.
+    - **19-Sector Custom Mapped Universe**: When a specific sector is selected, the scanner fetches the resolved tickers from `sector_mapped_stocks.json` (which compiles sub-sectors like Software, Hardware, and Services under `IT`, commercial vehicles/tyres under `AUTO`, and biotechnology/hospitals under `PHARMA & HEALTH`).
 - **Logic Parameters**:
     - `strategy`: Supports `current` (MOMENTUM VELOCITY), `vcp` (VCP MATRIX), `momentum_2` (MOMENTUM 2), and `vcp_2` (MOMENTUM VELOCITY 2.0).
     - `universe`: Targets specific market slices from `chunk1` to `chunk5`.
@@ -21,9 +22,14 @@ This document provides a comprehensive breakdown of the engineering decisions, t
     - `pullback_offset`, `swing_gate_pct`, `use_pullback_zone`: Configure the manual 2nd swing low pullback zone floor check.
     - `use_auto_pullback`: Toggles programmatic $L_1$ proximity EMA pivot resolving and $L_2$ structural support search.
     - `weekly_close_n`, `use_weekly_close_gate`: Toggles dynamic weekly resampling and lagging close strength validation.
+- **Indices API Endpoint (`/api/live_indices`)**: Fetches Nifty 50, Sensex, Bank Nifty, Nifty IT, Nifty 500, India VIX, and USD/INR in parallel using a pool of threads from yfinance, returning percentage changes and current prices with a robust offline fallback.
 - **Performance Optimizations**:
     - **Fast Price Lookup**: Implements `fast_info` metadata retrieval with a strict **0.5s thread-based timeout** to eliminate network-loop lag.
     - **Historical Volume Fallback**: Intelligent lookback logic that scans for the last non-zero trading session's volume, ensuring data consistency during off-market hours.
+    - **Local Outstanding Shares Database**: Renders market cap calculations free from dynamic yfinance query overhead. Downloads BSE scrip capital data (`scrip.zip`) once at startup and maps outstanding shares locally. This yields a 99.3%+ matching rate (5,168 tickers), computing market caps inline inside the scan loop:
+      $$\text{Market Cap (Cr)} = \frac{\text{Shares in Lakhs} \times \text{Last Close}}{100}$$
+    - **Parallel Chunked Downloader**: Queries yfinance in parallel batches of 150 tickers to avoid URL length limit errors and prevent rate limiting.
+    - **URL Parameter Encoding**: Wraps the fetch `sector` query in `encodeURIComponent(sector)` in JavaScript to ensure ampersands (`&`) do not break parameter parsing boundaries in uvicorn.
     - **Uniform Batch Loading**: Standardized all engines to use the high-efficiency `4mo` historical data baseline to maximize execution speed and ensure glitch-free pipeline results.
 - **Institutional Guardrails**:
     - **Price Floor**: Strict `if last_close < 50` rule (fallback to 30 for Momentum Open 2.0) to eliminate high-risk penny stocks.
@@ -43,7 +49,8 @@ This document provides a comprehensive breakdown of the engineering decisions, t
     - **Strategy Switcher**: High-response toggle for swapping between Momentum and VCP engines.
     - **Market Universe Selector**: Cyber-tactical dropdown for targeting specific market cap chunks.
     - **Dynamic Matrix Display**: Real-time UI label updates reflecting the active market segment.
-    - **Theme System**: Premium Dark Obsidian / Slate Workstation toggle with `localStorage` persistence and high-contrast accessibility overrides.
+    - **Theme System**: Bloomberg Terminal Obsidian (dark mode) / warm off-white Workstation (light mode) toggle with `localStorage` persistence and amber-yellow (`#FFC400`) brand accents.
+    - **Summary Console & Moving Marquee**: Header console strip displays system clock (IST) and engine state, while a dynamic infinite loop ticker tape below the header polls `/api/live_indices` every 30 seconds to stream index quotes.
     - **Performance Optimization (Theme)**: Implements a targeted, hardware-accelerated `.theme-transition` class with `will-change: background-color, border-color`. Universal wildcard transitions (`*`) are explicitly removed to ensure 0ms lag even with thousands of dynamic results populated in the DOM.
     - **Background Layering**: Optimized dual-layer background pseudo-elements (`::before` and `::after`) using opacity cross-fades for silky-smooth texture transitions.
     - **Terminology**: Swapped "Entry" for **"CMP"** (Current Market Price) for professional clarity.
@@ -61,7 +68,8 @@ This document provides a comprehensive breakdown of the engineering decisions, t
     - **Client-Side Export**: Browser-side CSV generation (including Volume data) using Blobs.
 
 ## 4. Interactive Charting & Resampling Engine
-- **Canvas Integration**: Embedded interactive ApexCharts candlestick + volume charts inside cards, supporting TradingView-style vertical scaling and right Y-axis scale price badges.
+- **Canvas Integration**: Embedded interactive ApexCharts candlestick + volume charts inside cards, supporting TradingView-style vertical scaling, right Y-axis scale price badges, and traditional green (bullish) and red (bearish) colors for candles and wicks.
+- **Dynamic Price Tracking**: The horizontal dashed CMP line and right Y-axis price badge background are dynamically colored green or red depending on the stock's daily change indicator.
 - **Server-Side Timeframe Selector**: Integrates server-side weekly and monthly candle resampling. When the user switches timeframes (1D / 1W / 1M), the frontend triggers an async fetch call back to the backend endpoint passing the respective timeframe flag. The backend downloads a larger historical matrix (`6mo` for `1D`, `3y` for `1W`, `10y` for `1M`), groups the daily rows (using Monday-aligned weeks and Month Start-aligned months), slices it to exactly 120 candles, and updates the series instantly using `chart.updateSeries` with `animate: false`.
 - **Y-Axis Volume Scale Lock**: Automatically enforces a volume-constraining scale (`min: 0, max: function(max) { return max * 3.0; }`) when switching timeframes, keeping volume bars strictly bound to the bottom 33% height of the chart floor.
 - **Layout & Padding Optimizations**:

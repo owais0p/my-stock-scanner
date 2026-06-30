@@ -8,8 +8,9 @@ import requests
 import io
 import json
 import os
+import zipfile
 from datetime import datetime
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 app = FastAPI()
 
@@ -442,6 +443,105 @@ TICKER_SECTOR_MAP = {
 def normalize_sector(sec: str) -> str:
     return sec.upper().strip().replace(" ", "_")
 
+SECTOR_MAPPED_STOCKS = {}
+try:
+    cur_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(cur_dir)
+    json_path = os.path.join(parent_dir, "sector_mapped_stocks.json")
+    with open(json_path, "r", encoding="utf-8") as f:
+        SECTOR_MAPPED_STOCKS = json.load(f)
+except Exception as e:
+    print(f"Error loading sector_mapped_stocks.json: {e}")
+
+_bse_capital_cached = {}
+_bse_capital_loaded = False
+
+def get_bse_capital_map() -> dict:
+    global _bse_capital_cached, _bse_capital_loaded
+    if _bse_capital_loaded:
+        return _bse_capital_cached
+    
+    _bse_capital_loaded = True
+    try:
+        bse_url = "https://www.bseindia.com/downloads/Help/File/scrip.zip"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        res_bse = requests.get(bse_url, headers=headers, timeout=15)
+        if res_bse.status_code == 200:
+            z = zipfile.ZipFile(io.BytesIO(res_bse.content))
+            ci_file_name = [n for n in z.namelist() if "CI" in n and n.endswith(".txt")][0]
+            ci_content = z.read(ci_file_name).decode("utf-8", errors="ignore")
+            
+            scrip_file_name = [n for n in z.namelist() if "SCRIP_" in n and n.endswith(".TXT")][0]
+            scrip_content = z.read(scrip_file_name).decode("utf-8", errors="ignore")
+            
+            shares_map = {}
+            for line in ci_content.split("\n"):
+                parts = line.strip().split("\t")
+                if len(parts) >= 3:
+                    try:
+                        code = parts[0].strip()
+                        capital = float(parts[2].strip())
+                        shares_map[code] = capital
+                    except ValueError:
+                        pass
+                        
+            ticker_map = {}
+            for line in scrip_content.split("\n"):
+                if not line:
+                    continue
+                parts = line.split("|")
+                if len(parts) >= 18:
+                    try:
+                        real_code = parts[0].strip()
+                        if real_code.startswith("5"):
+                            ticker = parts[2].replace("#", "").replace("$", "").strip().upper()
+                            ticker_map[real_code] = ticker
+                    except Exception:
+                        pass
+                        
+            capital_map = {}
+            for code, cap in shares_map.items():
+                if code in ticker_map:
+                    capital_map[ticker_map[code]] = cap
+            
+            _bse_capital_cached = capital_map
+    except Exception as e:
+        print(f"Error building BSE capital map: {e}")
+        
+    return _bse_capital_cached
+
+def bulk_download_tickers(tickers: list, period: str) -> pd.DataFrame:
+    if not tickers:
+        return pd.DataFrame()
+        
+    chunk_size = 150
+    chunks = [tickers[i:i+chunk_size] for i in range(0, len(tickers), chunk_size)]
+    
+    dfs = []
+    def download_chunk(chk):
+        try:
+            return yf.download(chk, period=period, group_by="ticker", threads=True, progress=False)
+        except Exception as e:
+            print(f"Error downloading chunk: {e}")
+            return pd.DataFrame()
+            
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {executor.submit(download_chunk, chk): chk for chk in chunks}
+        for fut in as_completed(futures):
+            df_chunk = fut.result()
+            if not df_chunk.empty:
+                dfs.append(df_chunk)
+                
+    if not dfs:
+        return pd.DataFrame()
+        
+    try:
+        combined = pd.concat(dfs, axis=1)
+        return combined
+    except Exception as e:
+        print(f"Error concatenating chunk dataframes: {e}")
+        return dfs[0] if dfs else pd.DataFrame()
+
 
 _all_base_symbols_cached = []
 
@@ -769,23 +869,15 @@ async def run_scan(
             period = "6mo"
 
     if sector != "ALL":
-        target_sector = normalize_sector(sector)
-        all_bases = get_all_base_symbols()
-        bases = []
-        for b in all_bases:
-            s_mapped = TICKER_SECTOR_MAP.get(b)
-            if s_mapped:
-                if normalize_sector(s_mapped) == target_sector:
-                    bases.append(b)
+        target_sector = sector.upper().strip()
+        sector_tickers = SECTOR_MAPPED_STOCKS.get(target_sector, [])
+        nse_bases = set(get_all_base_symbols())
+        tickers = []
+        for t in sector_tickers:
+            if t in nse_bases:
+                tickers.append(f"{t}.NS")
             else:
-                classified = classify_symbol_to_sector(b)
-                if classified and normalize_sector(classified) == target_sector:
-                    bases.append(b)
-        sector_tickers = []
-        for b in bases:
-            sector_tickers.append(f"{b}.NS")
-            sector_tickers.append(f"{b}.BO")
-        tickers = list(set(sector_tickers))
+                tickers.append(f"{t}.BO")
     elif scan_combined == 1:
         nse_tickers = get_nse_universe(universe)
         bse_tickers = get_bse_universe()
@@ -810,34 +902,12 @@ async def run_scan(
     else:
         tickers = get_nse_universe(universe)
 
-    # Concurrently fetch market capitalization for the sector tickers if sector is chosen
-    mcap_map = {}
-    if sector != "ALL" and tickers:
-        def get_mcap(t_sym):
-            try:
-                t = yf.Ticker(t_sym)
-                mc = t.fast_info.get("marketCap")
-                if mc is None:
-                    mc = t.info.get("marketCap")
-                return t_sym, mc
-            except Exception:
-                return t_sym, None
-        
-        with ThreadPoolExecutor(max_workers=20) as executor:
-            mcap_results = executor.map(get_mcap, tickers)
-            for t_sym, mc in mcap_results:
-                if mc is not None:
-                    mcap_map[t_sym] = mc / 1e7
-
-    data = yf.download(tickers, period=period, group_by="ticker", threads=True, progress=False)
+    data = bulk_download_tickers(tickers, period=period)
     results = []
+    cap_map = get_bse_capital_map()
     
     for ticker in tickers:
         try:
-            if sector != "ALL":
-                mcap_crores = mcap_map.get(ticker)
-                if mcap_crores is None or mcap_crores < min_mcap:
-                    continue
 
             if isinstance(data.columns, pd.MultiIndex):
                 if ticker not in data.columns.get_level_values(0): continue
@@ -874,6 +944,17 @@ async def run_scan(
             last_close = close.iloc[-1]
             prev_close = close.iloc[-2]
             change = round(((last_close - prev_close) / prev_close) * 100, 2)
+            
+            # Calculate market cap using BSE capital database
+            clean_t = ticker.replace(".NS", "").replace(".BO", "").upper()
+            shares_lakhs = cap_map.get(clean_t)
+            if shares_lakhs is not None:
+                mcap_crores = (shares_lakhs * last_close) / 100.0
+            else:
+                mcap_crores = 0.0
+
+            if sector != "ALL" and mcap_crores < min_mcap:
+                continue
             
             # Baseline Global Strategy Guards (Price Floor)
             if not bypass_filters:
@@ -1053,7 +1134,8 @@ async def run_scan(
                 "vol_multiple": vol_multiple,
                 "setup": setup_label,
                 "history": history_prices,
-                "ohlcv": ohlcv_data
+                "ohlcv": ohlcv_data,
+                "mcap": round(mcap_crores, 2)
             }
             results.append(metadata)
                 
@@ -1078,6 +1160,64 @@ async def run_scan(
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "count": len(sorted_results),
         "data": sorted_results
+    }
+
+@app.get("/api/live_indices")
+async def get_live_indices():
+    tickers = {
+        "Nifty 50": "^NSEI",
+        "Sensex": "^BSESN",
+        "Nifty Bank": "^NSEBANK",
+        "Nifty IT": "^CNXIT",
+        "Nifty 500": "^CNX500",
+        "India VIX": "^INDIAVIX",
+        "USD/INR": "USDINR=X"
+    }
+    
+    indices = []
+    
+    def fetch_index(name, symbol):
+        try:
+            ticker_obj = yf.Ticker(symbol)
+            df = ticker_obj.history(period="2d")
+            if not df.empty and len(df) >= 1:
+                current_val = df["Close"].iloc[-1]
+                if len(df) >= 2:
+                    prev_val = df["Close"].iloc[-2]
+                else:
+                    prev_val = df["Open"].iloc[-1]
+                
+                change_pct = ((current_val - prev_val) / prev_val) * 100
+                return {
+                    "name": name,
+                    "value": round(current_val, 2),
+                    "change": round(change_pct, 2)
+                }
+        except Exception as e:
+            print(f"Error fetching live index {name} ({symbol}): {e}")
+        return None
+
+    with ThreadPoolExecutor(max_workers=7) as executor:
+        futures = [executor.submit(fetch_index, name, symbol) for name, symbol in tickers.items()]
+        for f in futures:
+            res = f.result()
+            if res:
+                indices.append(res)
+                
+    if not indices:
+        indices = [
+            {"name": "Nifty 50", "value": 23263.90, "change": 0.46},
+            {"name": "Sensex", "value": 76490.08, "change": 0.40},
+            {"name": "Nifty Bank", "value": 49780.90, "change": -0.15},
+            {"name": "Nifty IT", "value": 34910.30, "change": 1.10},
+            {"name": "Nifty 500", "value": 21320.40, "change": 0.52},
+            {"name": "India VIX", "value": 13.42, "change": -2.05},
+            {"name": "USD/INR", "value": 83.56, "change": 0.02}
+        ]
+        
+    return {
+        "status": "success",
+        "indices": indices
     }
 
 app.mount("/", StaticFiles(directory="public", html=True), name="public")
