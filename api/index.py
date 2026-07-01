@@ -11,6 +11,8 @@ import os
 import zipfile
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import warnings
+warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
 
 app = FastAPI()
 
@@ -517,10 +519,52 @@ def bulk_download_tickers(tickers: list, period: str) -> pd.DataFrame:
     chunk_size = 150
     chunks = [tickers[i:i+chunk_size] for i in range(0, len(tickers), chunk_size)]
     
+    fields_set = {'open', 'high', 'low', 'close', 'adj close', 'volume'}
+    
+    def normalize_df(df_chunk, chk_list):
+        if df_chunk.empty:
+            return df_chunk
+            
+        if isinstance(df_chunk.columns, pd.MultiIndex):
+            # Check if Level 0 is fields instead of tickers
+            first_col = df_chunk.columns[0]
+            if len(first_col) == 2:
+                val0, val1 = first_col
+                if str(val0).lower() in fields_set and str(val1).lower() not in fields_set:
+                    df_chunk = df_chunk.swaplevel(0, 1, axis=1)
+            
+            # Populate missing variants in Level 0
+            unique_tickers = list(set(df_chunk.columns.get_level_values(0)))
+            for t_key in unique_tickers:
+                clean_t = str(t_key).replace(".NS", "").replace(".BO", "").upper()
+                variants = [clean_t, f"{clean_t}.NS", f"{clean_t}.BO"]
+                for variant in variants:
+                    if variant not in df_chunk.columns.get_level_values(0):
+                        try:
+                            for field in df_chunk[t_key].columns:
+                                df_chunk[(variant, field)] = df_chunk[(t_key, field)]
+                        except Exception as e:
+                            print(f"Error duplicating column for {variant} in chunk: {e}")
+        else:
+            if len(chk_list) == 1:
+                ticker_name = chk_list[0]
+                df_chunk.columns = pd.MultiIndex.from_product([[ticker_name], df_chunk.columns])
+                clean_t = str(ticker_name).replace(".NS", "").replace(".BO", "").upper()
+                variants = [clean_t, f"{clean_t}.NS", f"{clean_t}.BO"]
+                for variant in variants:
+                    if variant != ticker_name:
+                        try:
+                            for field in df_chunk[ticker_name].columns:
+                                df_chunk[(variant, field)] = df_chunk[(ticker_name, field)]
+                        except Exception as e:
+                            print(f"Error duplicating column for {variant} in single chunk: {e}")
+        return df_chunk
+
     dfs = []
     def download_chunk(chk):
         try:
-            return yf.download(chk, period=period, group_by="ticker", threads=True, progress=False)
+            df_chunk = yf.download(chk, period=period, group_by="ticker", threads=True, progress=False)
+            return normalize_df(df_chunk, chk)
         except Exception as e:
             print(f"Error downloading chunk: {e}")
             return pd.DataFrame()
@@ -537,6 +581,7 @@ def bulk_download_tickers(tickers: list, period: str) -> pd.DataFrame:
         
     try:
         combined = pd.concat(dfs, axis=1)
+        combined = normalize_df(combined, tickers)
         return combined
     except Exception as e:
         print(f"Error concatenating chunk dataframes: {e}")
@@ -567,6 +612,18 @@ def get_all_base_symbols() -> list:
                 symbols.add(s.upper())
     except Exception as e:
         print(f"Error fetching full NSE list: {e}")
+        
+    # 2b. Try fetching the NSE SME list
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        sme_url = "https://nsearchives.nseindia.com/content/equities/SME_EQUITY_L.csv"
+        res = requests.get(sme_url, headers=headers, timeout=10)
+        df_sme = pd.read_csv(io.StringIO(res.text))
+        for s in df_sme["SYMBOL"].str.strip().tolist():
+            if isinstance(s, str) and s and not pd.isna(s):
+                symbols.add(s.upper())
+    except Exception as e:
+        print(f"Error fetching NSE SME list: {e}")
         
     # 3. Try fetching Nifty 500 list
     try:
@@ -871,13 +928,10 @@ async def run_scan(
     if sector != "ALL":
         target_sector = sector.upper().strip()
         sector_tickers = SECTOR_MAPPED_STOCKS.get(target_sector, [])
-        nse_bases = set(get_all_base_symbols())
         tickers = []
         for t in sector_tickers:
-            if t in nse_bases:
-                tickers.append(f"{t}.NS")
-            else:
-                tickers.append(f"{t}.BO")
+            tickers.append(f"{t}.NS")
+            tickers.append(f"{t}.BO")
     elif scan_combined == 1:
         nse_tickers = get_nse_universe(universe)
         bse_tickers = get_bse_universe()
@@ -906,17 +960,64 @@ async def run_scan(
     results = []
     cap_map = get_bse_capital_map()
     
+    fields_set = {'open', 'high', 'low', 'close', 'adj close', 'volume'}
+    target_sector = sector.upper().strip()
+    if target_sector != "ALL":
+        requested_sector_stocks = {s.upper().strip() for s in SECTOR_MAPPED_STOCKS.get(target_sector, [])}
+    else:
+        requested_sector_stocks = set()
+        for stocks in SECTOR_MAPPED_STOCKS.values():
+            for s in stocks:
+                requested_sector_stocks.add(s.upper().strip())
+
     for ticker in tickers:
         try:
-
+            clean_t = ticker.replace(".NS", "").replace(".BO", "").upper()
+            variants = [ticker, f"{clean_t}.NS", f"{clean_t}.BO", clean_t]
+            
+            df = None
             if isinstance(data.columns, pd.MultiIndex):
-                if ticker not in data.columns.get_level_values(0): continue
-                df = data[ticker].copy()
+                col_level0 = data.columns.get_level_values(0)
+                for var in variants:
+                    if var in col_level0:
+                        df = data[var].copy()
+                        break
             else:
-                if data.empty: continue
-                df = data.copy()
+                if not data.empty:
+                    df = data.copy()
+            
+            is_requested_sector = clean_t in requested_sector_stocks
+            is_low_mcap = (min_mcap <= 100.0)
+            is_bypass_active = is_requested_sector and is_low_mcap
+            
+            if df is None or df.empty:
+                if is_bypass_active:
+                    # Attempt individual download as fallback
+                    for f_ticker in variants:
+                        try:
+                            fallback_df = yf.download(f_ticker, period=period, progress=False)
+                            if not fallback_df.empty:
+                                if isinstance(fallback_df.columns, pd.MultiIndex):
+                                    first_col = fallback_df.columns[0]
+                                    if len(first_col) == 2:
+                                        val0, val1 = first_col
+                                        if str(val0).lower() in fields_set and str(val1).lower() not in fields_set:
+                                            fallback_df = fallback_df.swaplevel(0, 1, axis=1)
+                                    unique_cols = list(set(fallback_df.columns.get_level_values(0)))
+                                    if unique_cols:
+                                        df = fallback_df[unique_cols[0]].copy()
+                                else:
+                                    df = fallback_df.copy()
+                                break
+                        except Exception as e:
+                            print(f"Fallback download failed for {f_ticker}: {e}")
+                
+                if df is None or df.empty:
+                    continue
             
             df = df.dropna(subset=["Close", "Volume"])
+            if df.empty:
+                continue
             
             # --- CRITICAL: Slicing for scan calculations ---
             # If the stock has limited history (Recent IPO tracking window)
@@ -929,15 +1030,18 @@ async def run_scan(
             # Validation guard gate
             bypass_filters = (sector != "ALL" and apply_sector_filters == 0)
             
-            if bypass_filters:
+            if is_bypass_active:
                 if len(df_calc) < 2: continue
             else:
-                if is_ipo:
-                    # Bypass 150/200 EMA filters completely to prevent rejection
-                    # Execute Consolidation / Volatility Contraction Pattern (VCP) analysis strictly on the available lifecycle data since Listing Day High.
-                    if len(df_calc) < 30: continue
+                if bypass_filters:
+                    if len(df_calc) < 2: continue
                 else:
-                    if len(df_calc) < max(60, ema_slow, consolidation_days): continue 
+                    if is_ipo:
+                        # Bypass 150/200 EMA filters completely to prevent rejection
+                        # Execute Consolidation / Volatility Contraction Pattern (VCP) analysis strictly on the available lifecycle data since Listing Day High.
+                        if len(df_calc) < 30: continue
+                    else:
+                        if len(df_calc) < max(60, ema_slow, consolidation_days): continue 
             
             close = df_calc["Close"]
             volume = df_calc["Volume"]
@@ -946,7 +1050,6 @@ async def run_scan(
             change = round(((last_close - prev_close) / prev_close) * 100, 2)
             
             # Calculate market cap using BSE capital database
-            clean_t = ticker.replace(".NS", "").replace(".BO", "").upper()
             shares_lakhs = cap_map.get(clean_t)
             if shares_lakhs is not None:
                 mcap_crores = (shares_lakhs * last_close) / 100.0
@@ -954,7 +1057,8 @@ async def run_scan(
                 mcap_crores = 0.0
 
             if sector != "ALL" and mcap_crores < min_mcap:
-                continue
+                if not (mcap_crores == 0.0 and is_bypass_active):
+                    continue
             
             # Baseline Global Strategy Guards (Price Floor)
             if not bypass_filters:
@@ -1162,14 +1266,23 @@ async def run_scan(
         "data": sorted_results
     }
 
+_live_indices_cached_response = None
+_live_indices_last_fetched_time = None
+
 @app.get("/api/live_indices")
 async def get_live_indices():
+    global _live_indices_cached_response, _live_indices_last_fetched_time
+    now = datetime.now()
+    if (_live_indices_cached_response is not None and 
+        _live_indices_last_fetched_time is not None and 
+        (now - _live_indices_last_fetched_time).total_seconds() < 300):
+        return _live_indices_cached_response
+
     tickers = {
         "Nifty 50": "^NSEI",
         "Sensex": "^BSESN",
         "Nifty Bank": "^NSEBANK",
         "Nifty IT": "^CNXIT",
-        "Nifty 500": "^CNX500",
         "India VIX": "^INDIAVIX",
         "USD/INR": "USDINR=X"
     }
@@ -1210,15 +1323,17 @@ async def get_live_indices():
             {"name": "Sensex", "value": 76490.08, "change": 0.40},
             {"name": "Nifty Bank", "value": 49780.90, "change": -0.15},
             {"name": "Nifty IT", "value": 34910.30, "change": 1.10},
-            {"name": "Nifty 500", "value": 21320.40, "change": 0.52},
             {"name": "India VIX", "value": 13.42, "change": -2.05},
             {"name": "USD/INR", "value": 83.56, "change": 0.02}
         ]
         
-    return {
+    response_payload = {
         "status": "success",
         "indices": indices
     }
+    _live_indices_cached_response = response_payload
+    _live_indices_last_fetched_time = now
+    return response_payload
 
 app.mount("/", StaticFiles(directory="public", html=True), name="public")
 
