@@ -737,12 +737,10 @@ class MarketDataCache:
                     # Cache is outdated
                     tickers_to_incremental_download.append((ticker, max_cached))
                 
-        # 3. Perform bulk downloads and update metadata
+        # 3. Perform bulk downloads and update metadata (now handled inline inside bulk_download_tickers_raw)
         if tickers_to_full_download:
             print(f"Cache Miss: Downloading {period} history for {len(tickers_to_full_download)} tickers...")
-            df_full = bulk_download_tickers_raw(tickers_to_full_download, period=period)
-            self.save_candles(df_full)
-            self.update_metadata(tickers_to_full_download, today_str)
+            bulk_download_tickers_raw(tickers_to_full_download, period=period)
             
         if tickers_to_incremental_download:
             min_cached_date_str = min(d for t, d in tickers_to_incremental_download)
@@ -751,9 +749,7 @@ class MarketDataCache:
             days_to_fetch = max(days_to_fetch, 2)
             
             print(f"Cache Update: Fetching incremental {days_to_fetch}d data for {len(tickers_to_incremental_download)} tickers...")
-            df_incr = bulk_download_tickers_raw([t for t, _ in tickers_to_incremental_download], period=f"{days_to_fetch}d")
-            self.save_candles(df_incr)
-            self.update_metadata([t for t, _ in tickers_to_incremental_download], today_str)
+            bulk_download_tickers_raw([t for t, _ in tickers_to_incremental_download], period=f"{days_to_fetch}d")
         
         # 4. Load from cache
         return self.load_candles(tickers, start_date)
@@ -769,6 +765,7 @@ def bulk_download_tickers_raw(tickers: list, period: str) -> pd.DataFrame:
     chunks = [tickers[i:i+chunk_size] for i in range(0, len(tickers), chunk_size)]
     
     fields_set = {'open', 'high', 'low', 'close', 'adj close', 'volume'}
+    today_str = datetime.now().strftime("%Y-%m-%d")
     
     def normalize_df(df_chunk, chk_list):
         if df_chunk.empty:
@@ -810,21 +807,28 @@ def bulk_download_tickers_raw(tickers: list, period: str) -> pd.DataFrame:
         return df_chunk
 
     dfs = []
-    def download_chunk(chk):
+    import time
+    for i, chk in enumerate(chunks):
+        if i > 0:
+            time.sleep(1.0) # Gentle throttle delay to prevent IP rate-limiting
         try:
+            print(f"Downloading chunk {i+1}/{len(chunks)} ({len(chk)} tickers)...")
             df_chunk = yf.download(chk, period=period, group_by="ticker", threads=True, progress=False)
-            return normalize_df(df_chunk, chk)
-        except Exception as e:
-            print(f"Error downloading chunk: {e}")
-            return pd.DataFrame()
+            df_chunk = normalize_df(df_chunk, chk)
             
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        futures = {executor.submit(download_chunk, chk): chk for chk in chunks}
-        for fut in as_completed(futures):
-            df_chunk = fut.result()
             if not df_chunk.empty:
                 dfs.append(df_chunk)
-                
+                # Save to cache database immediately
+                try:
+                    db_cache.save_candles(df_chunk)
+                    db_cache.update_metadata(chk, today_str)
+                except Exception as cache_err:
+                    print(f"Cache save error during raw download: {cache_err}")
+            else:
+                print(f"Chunk {i+1} returned empty DataFrame (possibly rate limited), skipping cache update for these symbols.")
+        except Exception as e:
+            print(f"Error downloading chunk {i+1}: {e}")
+            
     if not dfs:
         return pd.DataFrame()
         
