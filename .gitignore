@@ -6,3 +6,5 @@ node_modules
 __pycache__
 .env
 public/logo.svg
+market_data.db*
+

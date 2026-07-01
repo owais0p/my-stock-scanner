@@ -30,7 +30,10 @@ This document provides a comprehensive breakdown of the engineering decisions, t
       $$\text{Market Cap (Cr)} = \frac{\text{Shares in Lakhs} \times \text{Last Close}}{100}$$
     - **Parallel Chunked Downloader**: Queries yfinance in parallel batches of 150 tickers to avoid URL length limit errors and prevent rate limiting.
     - **URL Parameter Encoding**: Wraps the fetch `sector` query in `encodeURIComponent(sector)` in JavaScript to ensure ampersands (`&`) do not break parameter parsing boundaries in uvicorn.
-    - **Uniform Batch Loading**: Standardized all engines to use the high-efficiency `4mo` historical data baseline to maximize execution speed and ensure glitch-free pipeline results.
+    - **SQLite Database Caching Layer (`market_data.db`)**: Stores daily candle data locally in SQLite. Configured with Write-Ahead Logging (`PRAGMA journal_mode=WAL`) and a connection timeout of 30.0s to prevent write-locks between simultaneous uvicorn reloads and scan queries.
+    - **Self-Expanding Lookback**: Dynamically maps requested timeframes to lookbacks (e.g. `6mo` for `1D`) and downloads only the required period on cache miss. If the stock history in the cache is shorter than requested, it queries the missing lookback range.
+    - **Metadata-Aware Skip Gate**: Bypasses yfinance queries for missing/delisted stocks (marked as `NOT_FOUND` in `ticker_metadata` table) for 7 days. This skips both cache check downloads and scanner loop individual fallback downloads.
+    - **Bulk Insert Optimization**: Uses bulk `executemany` statements for database writes, reducing transaction holding locks from 15 seconds to under 0.2 seconds.
 - **Institutional Guardrails**:
     - **Price Floor**: Strict `if last_close < 50` rule (fallback to 30 for Momentum Open 2.0) to eliminate high-risk penny stocks.
     - **Liquidity Barrier**: Enforces a minimum **100k average daily volume** (20-day baseline) to ensure tradeability.

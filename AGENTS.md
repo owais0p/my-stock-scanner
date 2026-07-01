@@ -48,6 +48,11 @@ AAPNATRADER is a high-performance, institutional-grade stock scanning dashboard 
   $$\text{Market Cap (Cr)} = \frac{\text{Shares in Lakhs} \times \text{Last Close}}{100}$$
 - **Parallel Chunked Downloader**: Standard scans are divided into batches of 150 to query yfinance concurrently, avoiding URL length and rate limit restrictions.
 - **URL Parameter Encoding**: JavaScript fetch URLs wrap the sector name in `encodeURIComponent(sector)` to ensure sectors containing special characters like `&` are query-parsed as a single parameter by the FastAPI backend.
+- **SQLite Database Caching Layer (`market_data.db`)**: Stores daily stock candle historical data locally in SQLite. Uses Write-Ahead Logging (`PRAGMA journal_mode=WAL`) and a connection timeout of 30.0s for safe concurrent multi-process access.
+- **Self-Expanding Cache lookbacks**: Dynamically downloads only the requested timeframe lookback range (e.g. `6mo` for `1D` scans, `3y` for `1W` scans) on cache miss, saving bandwidth.
+- **Metadata-Aware Bypass**: Failed yfinance downloads (delisted stocks/404s) are cached as `NOT_FOUND` in a `ticker_metadata` table, allowing the downloader and scanning loop to bypass redundant yfinance checks for 7 days.
+- **Bulk Inserts**: Implements `executemany` bulk inserts, optimizing 150k insert speeds from 15 seconds to under 0.2 seconds.
+- **Multi-Suffix Sector Scanning**: Appends both `.NS` (NSE) and `.BO` (BSE) suffixes to the download queue for every sector stock, automatically resolving listings mismatches and de-duplicating results to prefer NSE.
 
 ## 🎨 Design System (Cyber-Terminal)
 - **Theme**: Pure Deep Obsidian (`#060810`) background, Bloomberg Amber/Yellow (`#FFC400`) accents, slate-200 text.

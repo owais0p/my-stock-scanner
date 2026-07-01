@@ -9,7 +9,8 @@ import io
 import json
 import os
 import zipfile
-from datetime import datetime
+from datetime import datetime, timedelta
+import sqlite3
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import warnings
 warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
@@ -512,7 +513,255 @@ def get_bse_capital_map() -> dict:
         
     return _bse_capital_cached
 
-def bulk_download_tickers(tickers: list, period: str) -> pd.DataFrame:
+class MarketDataCache:
+    def __init__(self, db_path="market_data.db"):
+        self.db_path = db_path
+        self._init_db()
+        
+    def _init_db(self):
+        conn = sqlite3.connect(self.db_path, timeout=30.0)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS historical_candles (
+                ticker TEXT,
+                date TEXT,
+                open REAL,
+                high REAL,
+                low REAL,
+                close REAL,
+                volume INTEGER,
+                PRIMARY KEY (ticker, date)
+            )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_ticker ON historical_candles (ticker)")
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS ticker_metadata (
+                ticker TEXT PRIMARY KEY,
+                status TEXT,
+                last_checked TEXT
+            )
+        """)
+        conn.commit()
+        conn.close()
+
+    def save_candles(self, df_multi):
+        if df_multi.empty:
+            return
+            
+        conn = sqlite3.connect(self.db_path, timeout=30.0)
+        cursor = conn.cursor()
+        
+        insert_data = []
+        if isinstance(df_multi.columns, pd.MultiIndex):
+            tickers = list(set(df_multi.columns.get_level_values(0)))
+            for ticker in tickers:
+                try:
+                    df_ticker = df_multi[ticker].dropna(subset=["Close"])
+                    for date_val, row in df_ticker.iterrows():
+                        date_str = date_val.strftime("%Y-%m-%d")
+                        insert_data.append((
+                            ticker,
+                            date_str,
+                            float(row["Open"]),
+                            float(row["High"]),
+                            float(row["Low"]),
+                            float(row["Close"]),
+                            int(row["Volume"]) if "Volume" in row else 0
+                        ))
+                except Exception as e:
+                    print(f"Error preparing cache data for {ticker}: {e}")
+        
+        if insert_data:
+            try:
+                cursor.executemany("""
+                    INSERT OR REPLACE INTO historical_candles (ticker, date, open, high, low, close, volume)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, insert_data)
+                conn.commit()
+            except Exception as e:
+                print(f"Error executing bulk insert in save_candles: {e}")
+        conn.close()
+
+    def update_metadata(self, tickers: list, today_str: str):
+        conn = sqlite3.connect(self.db_path, timeout=30.0)
+        cursor = conn.cursor()
+        
+        # Check which tickers actually have candles in the database
+        placeholders = ",".join("?" for _ in tickers)
+        cursor.execute(f"""
+            SELECT DISTINCT ticker FROM historical_candles 
+            WHERE ticker IN ({placeholders})
+        """, tickers)
+        cached_tickers = {row[0] for row in cursor.fetchall()}
+        
+        meta_data = []
+        for ticker in tickers:
+            status = 'ACTIVE' if ticker in cached_tickers else 'NOT_FOUND'
+            meta_data.append((ticker, status, today_str))
+            
+        try:
+            cursor.executemany("""
+                INSERT OR REPLACE INTO ticker_metadata (ticker, status, last_checked)
+                VALUES (?, ?, ?)
+            """, meta_data)
+            conn.commit()
+        except Exception as e:
+            print(f"Error executing bulk metadata insert: {e}")
+        conn.close()
+
+    def is_ticker_invalid(self, ticker: str) -> bool:
+        conn = sqlite3.connect(self.db_path, timeout=30.0)
+        cursor = conn.cursor()
+        variants = [ticker, f"{ticker}.NS", f"{ticker}.BO"]
+        placeholders = ",".join("?" for _ in variants)
+        seven_days_ago = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+        
+        try:
+            cursor.execute(f"""
+                SELECT COUNT(*) FROM ticker_metadata 
+                WHERE ticker IN ({placeholders}) AND status = 'NOT_FOUND' AND last_checked >= ?
+            """, list(variants) + [seven_days_ago])
+            count = cursor.fetchone()[0]
+        except Exception:
+            count = 0
+            
+        conn.close()
+        return count > 0
+
+    def load_candles(self, tickers: list, start_date: str) -> pd.DataFrame:
+        if not tickers:
+            return pd.DataFrame()
+            
+        conn = sqlite3.connect(self.db_path, timeout=30.0)
+        placeholders = ",".join("?" for _ in tickers)
+        query = f"""
+            SELECT ticker, date, open, high, low, close, volume 
+            FROM historical_candles 
+            WHERE ticker IN ({placeholders}) AND date >= ?
+            ORDER BY date ASC
+        """
+        params = list(tickers) + [start_date]
+        df = pd.read_sql_query(query, conn, params=params)
+        conn.close()
+        
+        if df.empty:
+            return pd.DataFrame()
+            
+        # Reconstruct yfinance MultiIndex dataframe columns: Level 0 = Ticker, Level 1 = Field
+        df['date'] = pd.to_datetime(df['date'])
+        
+        # Group by ticker to construct individual dataframes and concatenate
+        dfs_to_concat = []
+        for ticker in tickers:
+            df_t = df[df['ticker'] == ticker].copy()
+            if df_t.empty:
+                continue
+            df_t.set_index('date', inplace=True)
+            df_t.drop(columns=['ticker'], inplace=True)
+            df_t.rename(columns={
+                'open': 'Open',
+                'high': 'High',
+                'low': 'Low',
+                'close': 'Close',
+                'volume': 'Volume'
+            }, inplace=True)
+            df_t.columns = pd.MultiIndex.from_product([[ticker], df_t.columns])
+            dfs_to_concat.append(df_t)
+            
+        if not dfs_to_concat:
+            return pd.DataFrame()
+            
+        combined = pd.concat(dfs_to_concat, axis=1)
+        return combined
+
+    def update_cache_and_get_data(self, tickers: list, period: str) -> pd.DataFrame:
+        now = datetime.now()
+        today_str = now.strftime("%Y-%m-%d")
+        
+        # 1. Map period to start date
+        if period == "6mo":
+            delta_days = 180
+        elif period == "1y":
+            delta_days = 365
+        elif period == "2y":
+            delta_days = 730
+        elif period == "3y":
+            delta_days = 1095
+        elif period == "10y":
+            delta_days = 3650
+        else:
+            delta_days = 180
+            
+        start_date = (now - timedelta(days=delta_days)).strftime("%Y-%m-%d")
+        
+        # 2. Check cache status (retrieve both MIN and MAX date)
+        conn = sqlite3.connect(self.db_path, timeout=30.0)
+        cursor = conn.cursor()
+        cursor.execute("SELECT ticker, MIN(date), MAX(date) FROM historical_candles GROUP BY ticker")
+        cache_dates = {row[0]: (row[1], row[2]) for row in cursor.fetchall()}
+        
+        cursor.execute("SELECT ticker, status, last_checked FROM ticker_metadata")
+        ticker_meta = {row[0]: (row[1], row[2]) for row in cursor.fetchall()}
+        conn.close()
+        
+        tickers_to_full_download = []
+        tickers_to_incremental_download = []
+        
+        # Check if "last checked" date is within 7 days
+        seven_days_ago = (now - timedelta(days=7)).strftime("%Y-%m-%d")
+        
+        active_tickers_to_query = []
+        for ticker in tickers:
+            meta = ticker_meta.get(ticker)
+            if meta:
+                status, last_checked = meta
+                if status == 'NOT_FOUND' and last_checked >= seven_days_ago:
+                    # Skip downloading recently checked missing tickers
+                    continue
+            active_tickers_to_query.append(ticker)
+            
+        for ticker in active_tickers_to_query:
+            dates = cache_dates.get(ticker)
+            meta = ticker_meta.get(ticker)
+            last_checked = meta[1] if meta else None
+            
+            if not dates:
+                tickers_to_full_download.append(ticker)
+            else:
+                min_cached, max_cached = dates
+                if min_cached > start_date and last_checked != today_str:
+                    # Cache doesn't go back far enough and wasn't checked today
+                    tickers_to_full_download.append(ticker)
+                elif max_cached < today_str:
+                    # Cache is outdated
+                    tickers_to_incremental_download.append((ticker, max_cached))
+                
+        # 3. Perform bulk downloads and update metadata
+        if tickers_to_full_download:
+            print(f"Cache Miss: Downloading {period} history for {len(tickers_to_full_download)} tickers...")
+            df_full = bulk_download_tickers_raw(tickers_to_full_download, period=period)
+            self.save_candles(df_full)
+            self.update_metadata(tickers_to_full_download, today_str)
+            
+        if tickers_to_incremental_download:
+            min_cached_date_str = min(d for t, d in tickers_to_incremental_download)
+            min_cached_date = datetime.strptime(min_cached_date_str, "%Y-%m-%d")
+            days_to_fetch = (now - min_cached_date).days + 1
+            days_to_fetch = max(days_to_fetch, 2)
+            
+            print(f"Cache Update: Fetching incremental {days_to_fetch}d data for {len(tickers_to_incremental_download)} tickers...")
+            df_incr = bulk_download_tickers_raw([t for t, _ in tickers_to_incremental_download], period=f"{days_to_fetch}d")
+            self.save_candles(df_incr)
+            self.update_metadata([t for t, _ in tickers_to_incremental_download], today_str)
+        
+        # 4. Load from cache
+        return self.load_candles(tickers, start_date)
+
+# Global Cache Instance
+db_cache = MarketDataCache()
+
+def bulk_download_tickers_raw(tickers: list, period: str) -> pd.DataFrame:
     if not tickers:
         return pd.DataFrame()
         
@@ -586,6 +835,13 @@ def bulk_download_tickers(tickers: list, period: str) -> pd.DataFrame:
     except Exception as e:
         print(f"Error concatenating chunk dataframes: {e}")
         return dfs[0] if dfs else pd.DataFrame()
+
+def bulk_download_tickers(tickers: list, period: str) -> pd.DataFrame:
+    try:
+        return db_cache.update_cache_and_get_data(tickers, period)
+    except Exception as e:
+        print(f"Database Cache Error, falling back to raw download: {e}")
+        return bulk_download_tickers_raw(tickers, period)
 
 
 _all_base_symbols_cached = []
@@ -991,7 +1247,7 @@ async def run_scan(
             is_bypass_active = is_requested_sector and is_low_mcap
             
             if df is None or df.empty:
-                if is_bypass_active:
+                if is_bypass_active and not db_cache.is_ticker_invalid(clean_t):
                     # Attempt individual download as fallback
                     for f_ticker in variants:
                         try:

@@ -23,6 +23,8 @@
 - **19-Sector Custom Allocation Schema & Offline Market Cap Engine**: Maps sub-sectors like `IT - Software`/`IT - Services` to parent `IT` sector, auto-ancillaries/commercial vehicles to `AUTO`, and biotechnology/hospitals to `PHARMA & HEALTH`. Downloads BSE scrip capital data (`scrip.zip`) at startup to map outstanding shares locally with a 99.3%+ match rate (5,168 tickers), computing market caps inline inside the scan loop:
   $$\text{Market Cap (Cr)} = \frac{\text{Shares in Lakhs} \times \text{Last Close}}{100}$$
   Standard scans query yfinance using a parallel chunked downloader (batches of 150) to completely avoid rate limits. JavaScript calls use `encodeURIComponent(sector)` to encode ampersands (`&`) to prevent query parameter parsing bugs.
+- **SQLite Database Caching Layer (`market_data.db`)**: Caches daily candles locally in SQLite under transaction-isolated WAL mode. If the requested range (e.g. `6mo` for `1D`) is cached, the scan executes as a sub-second local query. Cache misses trigger a download of only the requested period (self-expanding lookbacks) instead of a static 10 years, minimizing data transfer.
+- **Metadata Bypass & Suffix Resolution**: In sector scans, both `.NS` and `.BO` variants are queued and processed (NSE preferred on de-duplication). Delisted/missing stock downloads are logged as `NOT_FOUND` in `ticker_metadata` and bypassed for 7 days in both cache misses and individual loop checks to prevent execution lag.
 - **Filtering**:
   - *MOMENTUM VELOCITY* (Strategy: `current`): Inherits the global filter matrix and enforces a ?50 price floor.
   - *MOMENTUM OPEN 2.0* (Strategy: `momentum_open_30`): High-alpha engine that directly leverages the global dynamic alpha engine without hardcoded constraints.
